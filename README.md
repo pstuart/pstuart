@@ -4,6 +4,7 @@
 
 **Senior Frontend Engineer** · **AI-Augmented Development Pioneer** · **Technical Leader**
 
+[![Stuart Technologies](https://img.shields.io/badge/Stuart_Technologies-4285F4?style=for-the-badge&logo=google-chrome&logoColor=white)](https://stuarttech.com)
 [![Website](https://img.shields.io/badge/patrickstuart.com-000000?style=for-the-badge&logo=About.me&logoColor=white)](https://patrickstuart.com)
 [![Blog](https://img.shields.io/badge/Blog-FF5722?style=for-the-badge&logo=hashnode&logoColor=white)](https://patrickstuart.com/blog)
 [![Twitter](https://img.shields.io/badge/@pstuart-1DA1F2?style=for-the-badge&logo=twitter&logoColor=white)](https://twitter.com/pstuart)
@@ -21,10 +22,10 @@ Started coding at age 8 — first app: a Pascal grading tool in 1992. Purdue gra
 
 ## Currently
 
+- Running **[Stuart Technologies](https://stuarttech.com)** — relaunched 2025 to build better apps & websites
 - Building next-gen travel experiences at **Avoya Travel** with Nuxt 4, Vue 3, and Tailwind
 - Developing **Swift/SwiftUI** apps for iOS and macOS
-- Pioneering **AI-augmented development** with Claude Code, Cursor, gemini and Copilot
-- Creating browser-based games and productivity apps at [patrickstuart.com](https://patrickstuart.com)
+- Pioneering **AI-augmented development** with Claude Code, Cursor, Gemini, and Copilot
 
 <br>
 
@@ -76,6 +77,7 @@ Started coding at age 8 — first app: a Pascal grading tool in 1992. Purdue gra
 
 | Years | Role | Company | Highlights |
 |:---:|:---|:---|:---|
+| 2025–Now | **Founder** | [Stuart Technologies](https://stuarttech.com) | Relaunched to build better apps & websites with AI-augmented development |
 | 2019–Now | **Senior Frontend Engineer** | Avoya Travel | Nuxt/Vue/Tailwind apps, component libraries, mobile (Quasar/Capacitor), real-time systems. Reduced load times from 10s+ to <1s. |
 | 2017–2019 | **VP Product & Development** | Hubitat, Inc. | Launched home automation platform, modernized frontend, built Dashboard & Maker API |
 | 2016–2021 | **Founder** | NPSRS, LLC | Custom software for real estate/entertainment, Open-Dash (Node.js dashboards) |

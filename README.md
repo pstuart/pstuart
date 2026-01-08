@@ -13,7 +13,7 @@
 
 ---
 
-UI/UX engineer with **25+ years** building for the web. I specialize in high-performance Vue/Nuxt applications, lead engineering teams, and actively integrate AI tools (Claude, ChatGPT) into development workflows to accelerate delivery and improve code quality.
+Software engineer with **25+ years** building for web and mobile. I specialize in Vue/Nuxt applications, Swift/iOS development, and AI-augmented workflows using Claude Code, Cursor, and Copilot to accelerate delivery and improve code quality.
 
 Started coding at age 8 — first app: a Pascal grading tool in 1992. Purdue grad '97. Lifelong builder, family man, and volunteer.
 
@@ -21,74 +21,48 @@ Started coding at age 8 — first app: a Pascal grading tool in 1992. Purdue gra
 
 ## Currently
 
-- Building next-gen travel experiences at **Avoya Travel** with Nuxt 3, Vue 3, and Tailwind
-- Exploring **AI-augmented development** workflows and tooling
+- Building next-gen travel experiences at **Avoya Travel** with Nuxt 4, Vue 3, and Tailwind
+- Developing **Swift/SwiftUI** apps for iOS and macOS
+- Pioneering **AI-augmented development** with Claude Code, Cursor, gemini and Copilot
 - Creating browser-based games and productivity apps at [patrickstuart.com](https://patrickstuart.com)
 
 <br>
 
 ## Tech Stack
 
-<table>
-<tr>
-<td align="center" width="96">
-<img src="https://skillicons.dev/icons?i=vue" width="48" height="48" alt="Vue" />
-<br>Vue
-</td>
-<td align="center" width="96">
-<img src="https://skillicons.dev/icons?i=nuxt" width="48" height="48" alt="Nuxt" />
-<br>Nuxt
-</td>
-<td align="center" width="96">
-<img src="https://skillicons.dev/icons?i=tailwind" width="48" height="48" alt="Tailwind" />
-<br>Tailwind
-</td>
-<td align="center" width="96">
-<img src="https://skillicons.dev/icons?i=ts" width="48" height="48" alt="TypeScript" />
-<br>TypeScript
-</td>
-<td align="center" width="96">
-<img src="https://skillicons.dev/icons?i=js" width="48" height="48" alt="JavaScript" />
-<br>JavaScript
-</td>
-<td align="center" width="96">
-<img src="https://skillicons.dev/icons?i=nodejs" width="48" height="48" alt="Node.js" />
-<br>Node.js
-</td>
-</tr>
-<tr>
-<td align="center" width="96">
-<img src="https://skillicons.dev/icons?i=firebase" width="48" height="48" alt="Firebase" />
-<br>Firebase
-</td>
-<td align="center" width="96">
-<img src="https://skillicons.dev/icons?i=aws" width="48" height="48" alt="AWS" />
-<br>AWS
-</td>
-<td align="center" width="96">
-<img src="https://skillicons.dev/icons?i=docker" width="48" height="48" alt="Docker" />
-<br>Docker
-</td>
-<td align="center" width="96">
-<img src="https://skillicons.dev/icons?i=git" width="48" height="48" alt="Git" />
-<br>Git
-</td>
-<td align="center" width="96">
-<img src="https://skillicons.dev/icons?i=vite" width="48" height="48" alt="Vite" />
-<br>Vite
-</td>
-<td align="center" width="96">
-<img src="https://skillicons.dev/icons?i=vitest" width="48" height="48" alt="Vitest" />
-<br>Vitest
-</td>
-</tr>
-</table>
+### Languages & Frameworks
+<p>
+<img src="https://skillicons.dev/icons?i=vue,nuxt,tailwind,ts,js,nodejs,swift,kotlin" />
+</p>
+
+### Mobile & Native Development
+<p>
+<img src="https://img.shields.io/badge/Xcode-147EFB?style=for-the-badge&logo=xcode&logoColor=white" height="30" />
+<img src="https://img.shields.io/badge/Android_Studio-3DDC84?style=for-the-badge&logo=androidstudio&logoColor=white" height="30" />
+<img src="https://img.shields.io/badge/SwiftUI-F05138?style=for-the-badge&logo=swift&logoColor=white" height="30" />
+<img src="https://img.shields.io/badge/Capacitor-119EFF?style=for-the-badge&logo=capacitor&logoColor=white" height="30" />
+<img src="https://img.shields.io/badge/Quasar-1976D2?style=for-the-badge&logo=quasar&logoColor=white" height="30" />
+</p>
+
+### AI-Powered Development
+<p>
+<img src="https://img.shields.io/badge/Claude_Code-D97757?style=for-the-badge&logo=anthropic&logoColor=white" height="30" />
+<img src="https://img.shields.io/badge/Cursor-000000?style=for-the-badge&logo=cursor&logoColor=white" height="30" />
+<img src="https://img.shields.io/badge/GitHub_Copilot-000000?style=for-the-badge&logo=githubcopilot&logoColor=white" height="30" />
+<img src="https://img.shields.io/badge/Gemini-8E75B2?style=for-the-badge&logo=googlegemini&logoColor=white" height="30" />
+<img src="https://img.shields.io/badge/ChatGPT-74AA9C?style=for-the-badge&logo=openai&logoColor=white" height="30" />
+</p>
+
+### Infrastructure & Tools
+<p>
+<img src="https://skillicons.dev/icons?i=firebase,aws,docker,git,vite,vitest,github" />
+</p>
 
 <details>
 <summary><b>More skills</b></summary>
 <br>
 
-**Frontend:** Quasar, Capacitor, Ionic, CSS/SCSS, HTML5, Responsive Design<br>
+**Frontend:** Quasar, Ionic, CSS/SCSS, HTML5, Responsive Design<br>
 **Backend:** Express, REST APIs, GraphQL, RabbitMQ<br>
 **Data:** PostgreSQL, MongoDB, Redis, Firestore<br>
 **DevOps:** GitHub Actions, CI/CD, Vercel, Netlify<br>
@@ -172,8 +146,13 @@ Started coding at age 8 — first app: a Pascal grading tool in 1992. Purdue gra
 ## GitHub Stats
 
 <div align="center">
-<img src="https://github-readme-stats.vercel.app/api?username=pstuart&show_icons=true&theme=github_dark&hide_border=true&bg_color=0d1117&title_color=58a6ff&icon_color=58a6ff&text_color=c9d1d9" alt="GitHub Stats" height="170" />
-<img src="https://github-readme-stats.vercel.app/api/top-langs/?username=pstuart&layout=compact&theme=github_dark&hide_border=true&bg_color=0d1117&title_color=58a6ff&text_color=c9d1d9" alt="Top Languages" height="170" />
+
+![GitHub followers](https://img.shields.io/github/followers/pstuart?style=for-the-badge&logo=github&labelColor=0d1117&color=58a6ff)
+![GitHub stars](https://img.shields.io/github/stars/pstuart?style=for-the-badge&logo=github&labelColor=0d1117&color=58a6ff)
+
+| <img src="https://github-readme-stats-sigma-five.vercel.app/api?username=pstuart&show_icons=true&theme=transparent&hide_border=true&title_color=58a6ff&icon_color=58a6ff&text_color=c9d1d9&rank_icon=github" alt="GitHub Stats" /> | <img src="https://github-readme-stats-sigma-five.vercel.app/api/top-langs/?username=pstuart&layout=compact&theme=transparent&hide_border=true&title_color=58a6ff&text_color=c9d1d9&langs_count=8" alt="Top Languages" /> |
+|---|---|
+
 </div>
 
 <br>

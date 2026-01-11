@@ -14,6 +14,25 @@
 
 ---
 
+<div align="center">
+
+## ☕ Featured Project: Barista
+
+**The Ultimate Status Bar for Claude Code**
+
+<a href="https://github.com/pstuart/Barista"><img src="https://img.shields.io/badge/GitHub-Barista-D97757?style=for-the-badge&logo=github" /></a>
+<a href="https://github.com/pstuart/Barista"><img src="https://img.shields.io/badge/Claude_Code-Status_Bar-D97757?style=for-the-badge&logo=anthropic&logoColor=white" /></a>
+
+Real-time Claude Code usage monitoring with **5-hour** and **7-day statistics**,<br>
+session tracking, cost estimates, and more.<br>
+Keep tabs on your AI coding assistant usage right from your terminal.
+
+<a href="https://github.com/pstuart/Barista"><b>View on GitHub →</b></a>
+
+</div>
+
+---
+
 Software engineer with **25+ years** building for web and mobile. I specialize in Vue/Nuxt applications, Swift/iOS development, and AI-augmented workflows using Claude Code, Cursor, and Copilot to accelerate delivery and improve code quality.
 
 Started coding at age 8 — first app: a Pascal grading tool in 1992. Purdue grad '97. Lifelong builder, family man, and volunteer.

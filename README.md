@@ -27,7 +27,7 @@ Real-time Claude Code usage monitoring with **5-hour** and **7-day statistics**,
 session tracking, cost estimates, and more.<br>
 Keep tabs on your AI coding assistant usage right from your terminal.
 
-<a href="https://github.com/pstuart/pstuart/tree/main/barista"><b>View on GitHub →</b></a>
+<a href="https://github.com/pstuart/Barista"><b>View on GitHub →</b></a>
 
 </div>
 

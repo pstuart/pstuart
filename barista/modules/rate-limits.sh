@@ -1,6 +1,6 @@
 # =============================================================================
 # Rate Limits Module - Shows 5-hour and 7-day usage with projections
-# Requires macOS Keychain with Claude Code OAuth token
+# Cross-platform: macOS Keychain or Linux ~/.claude/.credentials.json
 # =============================================================================
 # Configuration options:
 #   RATE_SHOW_5H            - Show 5-hour rate limit (default: true)
@@ -14,10 +14,43 @@
 #   RATE_7D_LABEL           - Label for 7-day (default: 7d)
 # =============================================================================
 
+# Get file modification time (cross-platform)
+_get_file_mtime() {
+    local file="$1"
+    if [ "$(uname)" = "Darwin" ]; then
+        stat -f %m "$file" 2>/dev/null || echo 0
+    else
+        stat -c %Y "$file" 2>/dev/null || echo 0
+    fi
+}
+
+# Parse ISO date to epoch (cross-platform)
+_parse_iso_date() {
+    local iso_date="$1"
+    local clean_date="${iso_date%%.*}"  # Remove fractional seconds
+    clean_date="${clean_date%Z}"         # Remove trailing Z if present
+    
+    if [ "$(uname)" = "Darwin" ]; then
+        date -u -j -f "%Y-%m-%dT%H:%M:%S" "$clean_date" +%s 2>/dev/null || echo 0
+    else
+        date -u -d "${clean_date}" +%s 2>/dev/null || echo 0
+    fi
+}
+
 # Fetch usage from Anthropic API
 _get_claude_usage() {
-    local token
-    token=$(security find-generic-password -s 'Claude Code-credentials' -w 2>/dev/null | jq -r '.claudeAiOauth.accessToken // empty' 2>/dev/null)
+    local token=""
+    
+    if [ "$(uname)" = "Darwin" ]; then
+        # macOS: use Keychain
+        token=$(security find-generic-password -s "Claude Code-credentials" -w 2>/dev/null | jq -r ".claudeAiOauth.accessToken // empty" 2>/dev/null)
+    else
+        # Linux: read from credentials file
+        local creds_file="$HOME/.claude/.credentials.json"
+        if [ -f "$creds_file" ]; then
+            token=$(jq -r ".claudeAiOauth.accessToken // empty" "$creds_file" 2>/dev/null)
+        fi
+    fi
 
     if [ -n "$token" ]; then
         curl -s --max-time 2 "https://api.anthropic.com/api/oauth/usage" \
@@ -33,7 +66,7 @@ _get_projection_status() {
     local warn_thresh="${RATE_WARNING_THRESHOLD:-80}"
     local crit_thresh="${RATE_CRITICAL_THRESHOLD:-100}"
 
-    if [ "${RATE_SHOW_PROJECTION:-true}" != "true" ]; then
+    if [ "${RATE_SHOW_PROJECTION:-true}" \!= "true" ]; then
         echo ""
         return
     fi
@@ -55,7 +88,7 @@ module_rate_limits() {
 
     # Read from cache if fresh
     if [ -f "$cache_file" ]; then
-        local cache_age=$(($(date +%s) - $(stat -f %m "$cache_file" 2>/dev/null || echo 0)))
+        local cache_age=$(($(date +%s) - $(_get_file_mtime "$cache_file")))
         if [ "$cache_age" -lt "${CACHE_MAX_AGE:-60}" ]; then
             usage_data=$(cat "$cache_file")
         fi
@@ -77,8 +110,8 @@ module_rate_limits() {
         return
     fi
 
-    local five_hour_obj=$(echo "$usage_data" | jq -r '.five_hour // .five_hour_opus // .five_hour_sonnet // "null"' 2>/dev/null)
-    local seven_day_obj=$(echo "$usage_data" | jq -r '.seven_day // .seven_day_opus // .seven_day_sonnet // "null"' 2>/dev/null)
+    local five_hour_obj=$(echo "$usage_data" | jq -r ".five_hour // .five_hour_opus // .five_hour_sonnet // \"null\"" 2>/dev/null)
+    local seven_day_obj=$(echo "$usage_data" | jq -r ".seven_day // .seven_day_opus // .seven_day_sonnet // \"null\"" 2>/dev/null)
 
     if [ "$five_hour_obj" = "null" ] || [ "$seven_day_obj" = "null" ]; then
         local result=""
@@ -88,10 +121,10 @@ module_rate_limits() {
         return
     fi
 
-    local five_hour=$(echo "$five_hour_obj" | jq -r '.utilization // 0' 2>/dev/null)
-    local seven_day=$(echo "$seven_day_obj" | jq -r '.utilization // 0' 2>/dev/null)
-    local five_hour_reset=$(echo "$five_hour_obj" | jq -r '.resets_at // empty' 2>/dev/null)
-    local seven_day_reset=$(echo "$seven_day_obj" | jq -r '.resets_at // empty' 2>/dev/null)
+    local five_hour=$(echo "$five_hour_obj" | jq -r ".utilization // 0" 2>/dev/null)
+    local seven_day=$(echo "$seven_day_obj" | jq -r ".utilization // 0" 2>/dev/null)
+    local five_hour_reset=$(echo "$five_hour_obj" | jq -r ".resets_at // empty" 2>/dev/null)
+    local seven_day_reset=$(echo "$seven_day_obj" | jq -r ".resets_at // empty" 2>/dev/null)
 
     local now=$(date +%s)
 
@@ -101,7 +134,7 @@ module_rate_limits() {
     # Cleanup old entries
     if [ -f "$history_file" ]; then
         local cutoff=$((now - 86400))
-        tail -100 "$history_file" | awk -F',' -v cutoff="$cutoff" '$1 >= cutoff' > "${history_file}.tmp" 2>/dev/null
+        tail -100 "$history_file" | awk -F"," -v cutoff="$cutoff" "\$1 >= cutoff" > "${history_file}.tmp" 2>/dev/null
         mv "${history_file}.tmp" "$history_file" 2>/dev/null
     fi
 
@@ -112,10 +145,13 @@ module_rate_limits() {
 
     # Parse 5-hour reset time and calculate projection
     if [ -n "$five_hour_reset" ]; then
-        local five_hour_reset_epoch=$(date -u -j -f "%Y-%m-%dT%H:%M:%S" "${five_hour_reset%%.*}" +%s 2>/dev/null || echo 0)
+        local five_hour_reset_epoch=$(_parse_iso_date "$five_hour_reset")
         five_hour_remaining=$((five_hour_reset_epoch - now))
         if [ "$five_hour_remaining" -gt 18000 ]; then
             five_hour_remaining=18000
+        fi
+        if [ "$five_hour_remaining" -lt 0 ]; then
+            five_hour_remaining=0
         fi
 
         # 5-hour projection
@@ -124,9 +160,9 @@ module_rate_limits() {
             if [ -n "$current_window_data" ]; then
                 local first_entry=$(echo "$current_window_data" | head -1)
                 local last_entry=$(echo "$current_window_data" | tail -1)
-                local first_ts=$(echo "$first_entry" | cut -d',' -f1)
-                local first_util=$(echo "$first_entry" | cut -d',' -f2)
-                local last_util=$(echo "$last_entry" | cut -d',' -f2)
+                local first_ts=$(echo "$first_entry" | cut -d"," -f1)
+                local first_util=$(echo "$first_entry" | cut -d"," -f2)
+                local last_util=$(echo "$last_entry" | cut -d"," -f2)
                 local elapsed=$((now - first_ts))
 
                 if [ "$elapsed" -gt 60 ]; then
@@ -144,10 +180,13 @@ module_rate_limits() {
 
     # Parse 7-day reset time and calculate projection
     if [ -n "$seven_day_reset" ]; then
-        local seven_day_reset_epoch=$(date -u -j -f "%Y-%m-%dT%H:%M:%S" "${seven_day_reset%%.*}" +%s 2>/dev/null || echo 0)
+        local seven_day_reset_epoch=$(_parse_iso_date "$seven_day_reset")
         seven_day_remaining=$((seven_day_reset_epoch - now))
         if [ "$seven_day_remaining" -gt 604800 ]; then
             seven_day_remaining=604800
+        fi
+        if [ "$seven_day_remaining" -lt 0 ]; then
+            seven_day_remaining=0
         fi
 
         # 7-day projection (needs 12h of data)
@@ -156,9 +195,9 @@ module_rate_limits() {
             if [ -n "$current_window_data" ]; then
                 local first_entry=$(echo "$current_window_data" | head -1)
                 local last_entry=$(echo "$current_window_data" | tail -1)
-                local first_ts=$(echo "$first_entry" | cut -d',' -f1)
-                local first_util=$(echo "$first_entry" | cut -d',' -f3)
-                local last_util=$(echo "$last_entry" | cut -d',' -f3)
+                local first_ts=$(echo "$first_entry" | cut -d"," -f1)
+                local first_util=$(echo "$first_entry" | cut -d"," -f3)
+                local last_util=$(echo "$last_entry" | cut -d"," -f3)
                 local elapsed=$((now - first_ts))
                 local min_elapsed=$((12 * 3600))
 

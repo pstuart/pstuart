@@ -1,0 +1,12 @@
+{
+  "env": {
+    "CLAUDE_CODE_TASK_LIST_ID": "5cb9e338-267f-4461-a8fd-2590706ab2a9"
+  },
+  "permissions": {
+    "allow": [
+      "Bash(ls:*)",
+      "Bash(git ls-tree:*)",
+      "Bash(git-filter-repo:*)"
+    ]
+  }
+}

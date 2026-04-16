@@ -1,0 +1,12 @@
+{
+  "name": "nuxt-modern-dev",
+  "version": "1.0.0",
+  "description": "Modern Nuxt/Vue development toolkit — enforces Tailwind-only styling, validates nginx configs, and provides accessibility and security guidance",
+  "author": {
+    "name": "Patrick Stuart",
+    "url": "https://stuarttech.com"
+  },
+  "repository": "https://github.com/pstuart/nuxt-modern-dev",
+  "license": "MIT",
+  "keywords": ["nuxt", "vue", "tailwind", "nginx", "accessibility", "web-development"]
+}

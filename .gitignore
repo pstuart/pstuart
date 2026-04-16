@@ -9,3 +9,6 @@ Icon
 
 # Thumbnails
 ._*
+
+# Claude Code
+.claude/

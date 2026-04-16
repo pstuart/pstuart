@@ -1,0 +1,12 @@
+{
+  "name": "dev-safety-net",
+  "version": "1.0.0",
+  "description": "Universal developer safety guardrails — blocks dangerous commands, verifies builds, provides session context, and scans repo health",
+  "author": {
+    "name": "Patrick Stuart",
+    "url": "https://stuarttech.com"
+  },
+  "repository": "https://github.com/pstuart/dev-safety-net",
+  "license": "MIT",
+  "keywords": ["safety", "guardrails", "build-verification", "developer-tools"]
+}

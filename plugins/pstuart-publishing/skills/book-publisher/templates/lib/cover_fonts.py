@@ -19,19 +19,17 @@ _VARIANTS = {
 }
 
 
-def register_fonts(pdf: FPDF) -> dict[str, str]:
+def register_fonts(pdf: FPDF) -> dict[str, tuple[str, str]]:
     """Register all 4 EB Garamond variants on `pdf`.
 
-    Returns a dict mapping face-key -> family name for use with
-    pdf.set_font(family, size=...). The family name is the same across
-    variants; fpdf2 distinguishes by style param in set_font.
-
-    Idempotent: safe to call multiple times on the same FPDF instance.
+    Returns a dict mapping face-key -> (family, style) for use with
+    `pdf.set_font(*fonts[key], size=...)`. Idempotent: safe to call
+    multiple times on the same FPDF instance.
     """
-    for key, (style, filename) in _VARIANTS.items():
+    for _key, (style, filename) in _VARIANTS.items():
         path = FONT_DIR / filename
-        # fpdf2 stores fonts under family+style (exact case: "ebgaramond", "ebgaramondI", etc.)
+        # fpdf2 stores fonts under (family, style). Only add if not already registered.
         font_key = f"{_FAMILY}{style}"
         if font_key not in pdf.fonts:
             pdf.add_font(_FAMILY, style, str(path))
-    return {key: _FAMILY for key in _VARIANTS}
+    return {key: (_FAMILY, style) for key, (style, _) in _VARIANTS.items()}

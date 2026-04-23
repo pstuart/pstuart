@@ -146,14 +146,18 @@ python3 generate_index.py
 # 5. Generate EPUB for Kindle
 python3 generate_epub.py
 
-# 6. Generate covers
-python3 create_kindle_cover.py
-python3 create_paperback_cover.py
+# 6. Generate cover art (interactive — drafts prompts, approves per surface)
+python3 generate_cover_art.py
 
-# 7. Add covers to PDF
+# 7. Compose covers from approved art
+python3 compose_paperback_wrap.py
+python3 compose_kindle_cover.py
+python3 compose_interior_art.py   # optional — only if you want chapter motif
+
+# 8. Add covers to PDF
 python3 add_covers_to_pdf.py
 
-# 8. Protect PDF (optional)
+# 9. Protect PDF (optional)
 python3 protect_pdf.py "YourOwnerPassword"
 ```
 
@@ -457,25 +461,57 @@ writer.encrypt(
 
 ## Cover Generation
 
-### Kindle Cover
-- Dimensions: 1600 x 2560 pixels (1:1.6 ratio)
-- Format: JPEG at 95% quality
-- Elements: Title, subtitle, tagline, decorative lines, author name
-- Solid or gradient background
+Cover art uses a two-step pipeline: **AI-generated bitmap artwork** (via local `zgen` / Draw Things CLI) composed with **vector text overlay** (via fpdf2). Vector text stays crisp at any zoom; the bitmap provides the visual identity.
 
-### Paperback Wrap Cover
-Full wrap including front, spine, and back:
-- Automatic spine width calculation based on page count
-- Proper bleed: 0.125" on all edges
-- Safe zones: 0.25" from trim for text
-- Back cover: hook, features list, author bio, price, barcode area
+### Pipeline
 
-### Spine Width Calculation
-```python
-# Standard calculations for Amazon KDP
-SPINE_WIDTH = PAGE_COUNT * 0.002252  # White paper (inches per page)
-SPINE_WIDTH = PAGE_COUNT * 0.002500  # Cream paper (inches per page)
 ```
+generate_cover_art.py   (interactive — drafts prompts, runs zgen serially,
+                         contact-sheet approval, seed-locked refinement loop)
+         ↓
+   cover-assets/{wrap_art,kindle_art,chapter_motif}.png  (committed to git)
+         ↓
+   ┌─ compose_paperback_wrap.py → paperback_wrap.pdf  (vector text over bitmap)
+   ├─ compose_kindle_cover.py   → kindle_cover.jpg    (PDF → raster at final step)
+   └─ compose_interior_art.py   → assets/chapter_motif.png (staged for generate_pdf.py)
+```
+
+### Requirements
+
+- Local `zgen` binary at `/Users/pstuart/bin/zgen` (Z Image Turbo via Draw Things CLI)
+- All image generation is **serial, one call at a time** — never batched
+
+### Configuration
+
+Style presets define color palettes for vector text (title, body, accent). Choose from: `navy_gold`, `burgundy_cream`, `teal_coral`, `black_silver`, `earth_warm`, `purple_gold`, `forest_cream`, `minimal_white`. Custom palettes supported via `COVER_STYLE` dict in your BOOK_CONFIG.
+
+### Dimensions
+
+| Surface | zgen canvas | Final output |
+|---|---|---|
+| Paperback wrap | 4992 × 2624 | PDF at `2·(5.5+0.125)+spine` × 8.75 inches |
+| Kindle | 1600 × 2560 | JPEG 1600 × 2560 |
+| Chapter motif | 1664 × 2560 | PNG 1650 × 2550 (staged to `assets/`) |
+
+### Spine calculation
+
+```python
+spine_width_inches = page_count * paper_thickness
+# paper_thickness = 0.002252 (white) or 0.002500 (cream)
+```
+
+Spine text is only drawn when the spine is ≥ 0.0625" (~28 pages white, ~25 pages cream).
+
+### Validation
+
+After `compose_paperback_wrap.py`, verify vector text survived:
+
+```bash
+pdftotext cover-assets/paperback_wrap.pdf -
+# Expected: book title and author appear in the output
+```
+
+Zoom paperback_wrap.pdf to 400% in Preview — title text must stay crisp. If pixelated, composition went wrong.
 
 ## Index Generation
 
@@ -507,25 +543,26 @@ Final output merges:
 ## Adding Covers to PDF
 
 ### add_covers_to_pdf.py
-Extracts front and back covers from paperback wrap and adds to content PDF:
+
+Reads `cover-assets/paperback_wrap.pdf` produced by `compose_paperback_wrap.py` and extracts the front and back panels as **vector PDF pages** via pypdf mediabox transforms. Preserves both the vector text and the underlying bitmap — nothing is rasterised during extraction.
 
 ```python
-def extract_front_cover_from_wrap(wrap_image_path: Path) -> Image.Image:
-    """Extract front cover (right portion) from full wrap."""
-    DPI = 300
-    TRIM_WIDTH = int(5.5 * DPI)   # 1650 pixels
-    BLEED = int(0.125 * DPI)      # 38 pixels
-    SPINE_WIDTH = int(PAGE_COUNT * 0.002252 * DPI)
+from pypdf import PdfReader, PdfWriter
+from pypdf.generic import RectangleObject
 
-    # Front cover starts after back + spine
-    front_x = (TRIM_WIDTH + BLEED) + SPINE_WIDTH
-    return img.crop((front_x, BLEED, front_x + TRIM_WIDTH, BLEED + TRIM_HEIGHT))
+# Front panel: crop the single-page wrap PDF to the front panel's x-range.
+# Both vector text and bitmap survive the mediabox crop.
+page.mediabox = RectangleObject((x0_pt, 0, x1_pt, wrap_h_pt))
+page.cropbox  = RectangleObject((x0_pt, 0, x1_pt, wrap_h_pt))
 ```
 
+The final merged PDF is `[front_panel | book_interior | back_panel]` — KDP-upload ready.
+
 ### Usage
+
 ```bash
 python3 add_covers_to_pdf.py
-# Automatically finds latest PDF and paperback_cover_clean.png
+# Automatically finds latest book PDF and cover-assets/paperback_wrap.pdf
 # Output: BookTitle_v*_with_covers.pdf
 ```
 
@@ -767,11 +804,13 @@ Before publishing:
 - [ ] No orphan/widow lines at page breaks
 
 ### Cover & Layout
-- [ ] Cover meets Amazon dimension requirements
-- [ ] Spine width calculated for final page count
-- [ ] Bleed extends 0.125" on cover
+- [ ] Open paperback_wrap.pdf in Preview — zoom to 400%, title text stays crisp (proves vector, not raster)
+- [ ] Extract text via `pdftotext paperback_wrap.pdf -` — title and author appear
+- [ ] Open kindle_cover.jpg at 100% — title readable, no JPEG artifacts on text edges
+- [ ] Spine text reads correctly (if spine ≥ 0.0625")
+- [ ] Chapter motif renders on every chapter opener (if chapter_motif.png exists in assets/)
+- [ ] Bleed extends full 0.125" on all edges of paperback_wrap.pdf
 - [ ] Images are 300 DPI minimum
-- [ ] Front/back covers extracted correctly from wrap
 
 ### EPUB
 - [ ] EPUB validates in Kindle Previewer

@@ -47,6 +47,12 @@ def compose_wrap(
     output: Path,
 ) -> Path:
     """Render paperback_wrap.pdf. Returns output path."""
+    missing = [k for k in ("title", "author") if not book_config.get(k)]
+    if missing:
+        raise ValueError(
+            f"book_config missing required keys: {missing}. "
+            "Set TITLE and AUTHOR in BOOK_CONFIG before composing."
+        )
     if book_config.get("page_count", 0) < 24:
         raise ValueError(
             f"book_config['page_count'] must be >= 24 (got {book_config.get('page_count')}). "
@@ -55,6 +61,11 @@ def compose_wrap(
     page_count = book_config["page_count"]
     paper = book_config.get("paper_type", "white")
     preset = book_config.get("style_preset", "navy_gold")
+    if preset not in STYLE_PRESETS:
+        raise ValueError(
+            f"book_config['style_preset']={preset!r} not in STYLE_PRESETS. "
+            f"Valid presets: {sorted(STYLE_PRESETS.keys())}"
+        )
     colors = STYLE_PRESETS[preset]
 
     wrap_w, wrap_h = wrap_canvas_inches(page_count, paper)

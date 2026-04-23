@@ -57,3 +57,27 @@ def test_compose_wrap_raises_when_page_count_missing(tmp_path: Path, sample_book
             wrap_art=tmp_path / "nonexistent.png",
             output=tmp_path / "out.pdf",
         )
+
+
+def test_compose_wrap_raises_when_title_missing(tmp_path: Path, sample_book_config: dict):
+    compose_wrap = _import_compose_wrap()
+    sample_book_config.pop("title", None)
+    with pytest.raises(ValueError, match="title"):
+        compose_wrap(
+            book_config=sample_book_config,
+            wrap_art=tmp_path / "nonexistent.png",
+            output=tmp_path / "out.pdf",
+        )
+
+
+def test_compose_wrap_raises_on_unknown_style_preset(
+    tmp_path: Path, sample_book_config: dict
+):
+    compose_wrap = _import_compose_wrap()
+    sample_book_config["style_preset"] = "neon_pink"
+    with pytest.raises(ValueError, match="style_preset"):
+        compose_wrap(
+            book_config=sample_book_config,
+            wrap_art=tmp_path / "nonexistent.png",
+            output=tmp_path / "out.pdf",
+        )

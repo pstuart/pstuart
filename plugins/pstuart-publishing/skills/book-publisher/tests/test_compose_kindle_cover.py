@@ -59,3 +59,56 @@ def test_compose_kindle_raises_on_unknown_style_preset(
             kindle_art=tmp_path / "nonexistent.png",
             output=tmp_path / "out.jpg",
         )
+
+
+def test_compose_kindle_with_kindle_quote(tmp_path: Path, sample_book_config: dict):
+    """kindle_quote renders as an optional front pull-quote."""
+    compose_kindle = _import_compose_kindle()
+    pub = tmp_path / "publishing" / "cover-assets"
+    pub.mkdir(parents=True)
+    _make_kindle_placeholder(pub / "kindle_art.png")
+
+    sample_book_config["kindle_quote"] = "A thrilling debut."
+
+    out = compose_kindle(
+        book_config=sample_book_config,
+        kindle_art=pub / "kindle_art.png",
+        output=pub / "kindle_cover.jpg",
+    )
+    assert out.exists()
+    # Can't extract text from raster JPEG; just ensure the compose didn't crash
+    # and the output has the right dimensions.
+    with Image.open(out) as img:
+        assert img.size == (1600, 2560)
+
+
+def test_compose_kindle_minimal_config(tmp_path: Path):
+    """Only required keys — compose succeeds even without a bitmap."""
+    compose_kindle = _import_compose_kindle()
+    out_dir = tmp_path / "out"
+    out_dir.mkdir()
+    out = compose_kindle(
+        book_config={
+            "title": "Minimal",
+            "author": "Jane",
+            "page_count": 100,  # required by validate_and_defaults
+        },
+        kindle_art=out_dir / "nonexistent.png",  # missing is fine
+        output=out_dir / "kindle_cover.jpg",
+    )
+    assert out.exists()
+
+
+def test_compose_kindle_tmp_pdf_cleaned_on_success(tmp_path: Path, sample_book_config: dict):
+    """Post-success: tmp .tmp.pdf should be gone."""
+    compose_kindle = _import_compose_kindle()
+    pub = tmp_path / "publishing" / "cover-assets"
+    pub.mkdir(parents=True)
+    _make_kindle_placeholder(pub / "kindle_art.png")
+    out = compose_kindle(
+        book_config=sample_book_config,
+        kindle_art=pub / "kindle_art.png",
+        output=pub / "kindle_cover.jpg",
+    )
+    # tmp_pdf should be gone (try/finally unlinked it)
+    assert not (out.with_suffix(".tmp.pdf")).exists(), "tmp .tmp.pdf was not cleaned up"

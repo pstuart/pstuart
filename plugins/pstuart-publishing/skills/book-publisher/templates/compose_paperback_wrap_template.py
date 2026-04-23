@@ -32,6 +32,7 @@ from lib.cover_text import (
 from lib.cover_style import resolve_colors
 from lib.cover_fonts import register_fonts
 from lib.cover_decor import draw_ink_rule, draw_flourish_rule
+from lib.cover_config import validate_and_defaults
 
 
 def _render_front_panel(
@@ -316,21 +317,13 @@ def compose_wrap(
     output: Path,
 ) -> Path:
     """Render paperback_wrap.pdf. Returns output path."""
-    missing = [k for k in ("title", "author") if not book_config.get(k)]
-    if missing:
-        raise ValueError(
-            f"book_config missing required keys: {missing}. "
-            "Set TITLE and AUTHOR in BOOK_CONFIG before composing."
-        )
-    if book_config.get("page_count", 0) < 24:
-        raise ValueError(
-            f"book_config['page_count'] must be >= 24 (got {book_config.get('page_count')}). "
-            "Set PAGE_COUNT in BOOK_CONFIG before composing — spine depends on it."
-        )
-    page_count = book_config["page_count"]
-    paper = book_config.get("paper_type", "white")
-    preset = book_config.get("style_preset", "navy_gold")
-    tone = book_config.get("background_tone", "light_bg")
+    # Validate & fill defaults (normalizes raw dict, raises on required-key issues)
+    config = validate_and_defaults(book_config)
+
+    page_count = config["page_count"]
+    paper = config["paper_type"]
+    preset = config["style_preset"]
+    tone = config["background_tone"]
     colors = resolve_colors(preset, tone=tone)
 
     wrap_w, wrap_h = wrap_canvas_inches(page_count, paper)
@@ -340,62 +333,20 @@ def compose_wrap(
     pdf.set_auto_page_break(auto=False)
     pdf.add_page()
 
-    # 1. Full-bleed bitmap background
+    # Register EB Garamond so text zones can use Unicode-capable TTF
+    fonts = register_fonts(pdf)
+
+    # 1. Full-bleed bitmap background (optional — if file missing, text-only)
     if wrap_art.exists():
         pdf.image(str(wrap_art), x=0, y=0, w=wrap_w, h=wrap_h)
 
-    # 2. Front panel text (right side)
-    front_cx = (offsets["front_start"] + offsets["front_end"]) / 2
-    front_safe_top = BLEED_INCHES + SAFE_MARGIN_INCHES
-    draw_centered_text(
-        pdf, text=book_config["title"].upper(),
-        x_center=front_cx, y=front_safe_top + 0.8,
-        size_pt=42, color=colors["title"],
-    )
-    if book_config.get("subtitle"):
-        draw_centered_text(
-            pdf, text=book_config["subtitle"],
-            x_center=front_cx, y=front_safe_top + 1.6,
-            size_pt=16, color=colors["body"],
-        )
-    draw_centered_text(
-        pdf, text=book_config["author"].upper(),
-        x_center=front_cx,
-        y=wrap_h - BLEED_INCHES - SAFE_MARGIN_INCHES - 0.4,
-        size_pt=18, color=colors["title"],
-    )
-
-    # 3. Back panel text (left side)
-    back_safe_left = offsets["back_start"] + BLEED_INCHES + SAFE_MARGIN_INCHES
-    back_safe_top = BLEED_INCHES + SAFE_MARGIN_INCHES + 0.5
-    if book_config.get("tagline"):
-        draw_centered_text(
-            pdf, text=book_config["tagline"],
-            x_center=(offsets["back_start"] + offsets["back_end"]) / 2,
-            y=back_safe_top,
-            size_pt=14, color=colors["accent"],
-        )
-    back_body_y = back_safe_top + 0.6
-    body_lines = book_config.get("back_body_lines", [])
-    if body_lines:
-        draw_left_aligned_block(
-            pdf, lines=body_lines,
-            x=back_safe_left, y=back_body_y,
-            size_pt=10, color=colors["body"], line_height_in=0.18,
-        )
-
-    # 4. Spine text (if spine wide enough)
-    spine_w = offsets["spine_end"] - offsets["spine_start"]
-    spine_text = f"{book_config['title']}  /  {book_config['author']}"
-    draw_spine_text(
-        pdf, text=spine_text,
-        spine_start_x=offsets["spine_start"],
-        spine_width=spine_w,
-        wrap_height=wrap_h,
-        size_pt=10, color=colors["title"],
-    )
-
+    # 2. Delegated zone rendering
     output.parent.mkdir(parents=True, exist_ok=True)
+    _render_front_panel(pdf, config, offsets, wrap_h, colors, fonts)
+    _render_back_panel(pdf, config, offsets, wrap_h, colors, fonts, output.parent)
+    _render_spine(pdf, config, offsets, wrap_h, colors, fonts)
+
+    # 3. Write the PDF
     pdf.output(str(output))
     return output
 

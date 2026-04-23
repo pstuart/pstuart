@@ -81,3 +81,80 @@ def test_compose_wrap_raises_on_unknown_style_preset(
             wrap_art=tmp_path / "nonexistent.png",
             output=tmp_path / "out.pdf",
         )
+
+
+def test_compose_wrap_full_config_all_zones_extract(tmp_path: Path, sample_book_config: dict):
+    """With every optional field set, all zone content survives to pdftotext."""
+    compose_wrap = _import_compose_wrap()
+    pub_dir = tmp_path / "publishing"
+    assets_dir = pub_dir / "cover-assets"
+    assets_dir.mkdir(parents=True)
+    _make_wrap_placeholder(assets_dir / "wrap_art.png")
+
+    # Populate every optional field
+    sample_book_config.update({
+        "genre_line": "A Historical Conspiracy Thriller",
+        "back_tagline": "A playwright who never existed.",
+        "quote": "A thrilling debut.",
+        "quote_attribution": "BookReviewer",
+        "blurb": [
+            "Paragraph one of the blurb.",
+            "",
+            "Paragraph two of the blurb.",
+        ],
+        "author_bio": "The author lives in the Pacific Northwest.",
+        "author_bio_label": "About the Author",
+        "isbn": "9780000000002",
+        "price_us": "$18.99",
+        "publisher": "Sample Press",
+        "publisher_city": "Seattle",
+        "imprint": "Sample Imprint",
+        "series_line_front": "A Novel of Elizabethan England",
+        "series_line_back": "The Folio Conspiracy · Book I",
+    })
+
+    out_pdf = compose_wrap(
+        book_config=sample_book_config,
+        wrap_art=assets_dir / "wrap_art.png",
+        output=assets_dir / "paperback_wrap.pdf",
+    )
+    assert out_pdf.exists()
+
+    reader = PdfReader(str(out_pdf))
+    text = "\n".join(p.extract_text() or "" for p in reader.pages)
+    # sample_book_config title is "Sample Title" → uppercased to "SAMPLE TITLE" on front panel
+    for expected in [
+        "SAMPLE TITLE",           # title (uppercased by front panel)
+        "Historical Conspiracy",
+        "playwright who never existed",
+        "A thrilling debut",
+        "Paragraph one",
+        "Paragraph two",
+        "$18.99",
+        "Sample Press",
+        "Folio Conspiracy",
+        "Elizabethan England",
+    ]:
+        assert expected in text, f"missing zone content: {expected!r}"
+
+
+def test_compose_wrap_minimal_config_produces_pdf(tmp_path: Path):
+    """Only required keys set; compose still produces a valid PDF."""
+    compose_wrap = _import_compose_wrap()
+    assets_dir = tmp_path / "assets"
+    assets_dir.mkdir()
+    # Don't even stage a bitmap — text-only render should work
+    out_pdf = compose_wrap(
+        book_config={
+            "title": "Minimal Book",
+            "author": "Jane Doe",
+            "page_count": 100,
+        },
+        wrap_art=assets_dir / "nonexistent.png",  # missing — should be OK
+        output=assets_dir / "paperback_wrap.pdf",
+    )
+    assert out_pdf.exists()
+    reader = PdfReader(str(out_pdf))
+    text = "\n".join(p.extract_text() or "" for p in reader.pages)
+    assert "MINIMAL BOOK" in text
+    assert "JANE DOE" in text.upper()

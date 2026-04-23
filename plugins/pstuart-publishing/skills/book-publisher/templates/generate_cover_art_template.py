@@ -34,9 +34,15 @@ def _canonical_path(assets: Path, surface: str) -> Path:
     return assets / f"{surface}_art.png"
 
 
-def _generate_candidates(surface: str, genre: str, palette: str, assets: Path) -> list[dict]:
+def _generate_candidates(
+    surface: str, genre: str, palette: str, assets: Path,
+    compositions: list[tuple[str, bool]] | None = None,
+) -> list[dict]:
     """Build 3 variants, show to user, run zgen serially."""
-    variants = build_variants(surface=surface, genre=genre, palette_key=palette)
+    variants = build_variants(
+        surface=surface, genre=genre, palette_key=palette,
+        compositions=compositions,
+    )
     print(f"\n=== {surface.upper()} — drafted {len(variants)} prompts ===")
     for i, v in enumerate(variants, 1):
         label = "WILDCARD" if v["is_wildcard"] else "on-palette"
@@ -138,13 +144,18 @@ def generate_cover_art(
 
     genre = book_config.get("genre", "non-fiction")
     palette = book_config.get("style_preset", "navy_gold")
+    # BOOK_CONFIG may override compositions per surface; fallback to hardcoded defaults
+    comp_overrides = book_config.get("cover_compositions", {})
 
     for surface in SURFACES:
         if surface in session.surfaces and session.surfaces[surface].get("approved_file"):
             print(f"Skipping {surface} — already approved.")
             continue
 
-        candidates = _generate_candidates(surface, genre, palette, assets_dir)
+        candidates = _generate_candidates(
+            surface, genre, palette, assets_dir,
+            compositions=comp_overrides.get(surface),
+        )
         for c in candidates:
             session.record_iteration(
                 surface=surface, prompt=c["prompt"], seed=c["seed"],
@@ -178,7 +189,10 @@ def generate_cover_art(
                 _promote_candidate(surface, refined, assets_dir)
                 break
             if choice == "reroll":
-                candidates = _generate_candidates(surface, genre, palette, assets_dir)
+                candidates = _generate_candidates(
+                    surface, genre, palette, assets_dir,
+                    compositions=comp_overrides.get(surface),
+                )
                 continue
             print(f"  unrecognized: {choice!r}")
 

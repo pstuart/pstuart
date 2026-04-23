@@ -130,3 +130,47 @@ def test_returned_dict_has_no_required_missing():
     result = validate_and_defaults(_minimal())
     for key in REQUIRED_KEYS:
         assert key in result
+
+
+def test_cover_compositions_default_empty_dict():
+    result = validate_and_defaults(_minimal())
+    assert result["cover_compositions"] == {}
+
+
+def test_cover_compositions_valid_shape_passes():
+    config = _minimal()
+    config["cover_compositions"] = {
+        "wrap": [("Tudor scene", False), ("abstract scene", True)],
+        "kindle": [("portrait figure", False)],
+    }
+    result = validate_and_defaults(config)
+    assert "wrap" in result["cover_compositions"]
+    assert result["cover_compositions"]["wrap"][0] == ("Tudor scene", False)
+
+
+def test_cover_compositions_wrong_type_raises():
+    config = _minimal()
+    config["cover_compositions"] = "not a dict"
+    with pytest.raises(TypeError, match="cover_compositions"):
+        validate_and_defaults(config)
+
+
+def test_cover_compositions_unknown_surface_raises():
+    config = _minimal()
+    config["cover_compositions"] = {"facebook_banner": [("x", False)]}
+    with pytest.raises(ValueError, match="facebook_banner"):
+        validate_and_defaults(config)
+
+
+def test_cover_compositions_bad_entry_shape_raises():
+    config = _minimal()
+    config["cover_compositions"] = {"wrap": [("composition only, missing bool")]}
+    with pytest.raises(ValueError, match=r"\(str, bool\)"):
+        validate_and_defaults(config)
+
+
+def test_cover_compositions_bad_entry_types_raises():
+    config = _minimal()
+    config["cover_compositions"] = {"wrap": [(123, False)]}
+    with pytest.raises(ValueError, match=r"\(str, bool\)"):
+        validate_and_defaults(config)

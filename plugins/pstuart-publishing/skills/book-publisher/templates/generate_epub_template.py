@@ -49,7 +49,7 @@ def get_build_version():
     return f"v{BOOK_METADATA['version']}.{build_time}"
 
 # Cover image (optional - set to None if no cover)
-COVER_IMAGE = PUB_DIR / "kindle_cover.jpg"
+COVER_IMAGE = PUB_DIR / "cover-assets" / "kindle_cover.jpg"
 
 # ============================================================================
 # DEFAULT EMBEDDED CSS - Used if CSS_FILE not found
@@ -1126,12 +1126,17 @@ def create_epub():
     )
     book.add_item(css_item)
 
-    # Add cover image if exists
-    if COVER_IMAGE and COVER_IMAGE.exists():
-        with open(COVER_IMAGE, 'rb') as f:
-            cover_data = f.read()
-        book.set_cover('cover.jpg', cover_data)
-        print(f"  Added cover image: {COVER_IMAGE.name}")
+    # Kindle cover is required. Run compose_kindle_cover.py if missing.
+    if not COVER_IMAGE.exists():
+        import sys
+        sys.exit(
+            f"ERROR: Kindle cover not found at {COVER_IMAGE}. "
+            "Run compose_kindle_cover.py first."
+        )
+    with open(COVER_IMAGE, 'rb') as f:
+        cover_data = f.read()
+    book.set_cover('cover.jpg', cover_data)
+    print(f"  Added cover image: {COVER_IMAGE.name}")
 
     # Parse chapters
     chapters = parse_manuscript(content)

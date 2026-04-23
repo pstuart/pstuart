@@ -739,6 +739,24 @@ Printed in the United States of America
 
         self.set_y(y_center + radius + 0.1)
 
+    def _render_chapter_motif_if_present(self, num, title) -> bool:
+        """If assets/chapter_motif.png exists, render as top banner.
+
+        Returns True if motif was rendered (caller should skip its own top
+        margin positioning since this has already set_y below the banner),
+        False otherwise.
+        """
+        from pathlib import Path
+        motif_path = Path(__file__).parent.parent / "assets" / "chapter_motif.png"
+        if not motif_path.exists():
+            return False
+        # Banner is top 40% of page height, full page width (no margins).
+        banner_h = self.h * 0.40
+        self.image(str(motif_path), x=0, y=0, w=self.w, h=banner_h)
+        # Move cursor below motif with a 0.15" whitespace gap (no divider rule).
+        self.set_y(banner_h + 0.15)
+        return True
+
     # ========================================================================
     # CHAPTER AND SECTION METHODS
     # ========================================================================
@@ -764,7 +782,11 @@ Printed in the United States of America
             elif num:
                 self.page_numbers[f"ch_{num}"] = self.page_no()
 
-        self.set_y(1.0)
+        # Optional chapter motif banner. If present, the helper already
+        # positioned the cursor below the banner; otherwise use the
+        # default top-margin positioning.
+        if not self._render_chapter_motif_if_present(num, title):
+            self.set_y(1.0)
 
         if num:
             self.chapter_number_badge(num)

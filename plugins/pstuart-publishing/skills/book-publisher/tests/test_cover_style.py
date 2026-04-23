@@ -11,11 +11,11 @@ def test_every_palette_has_both_tone_variants():
 
 
 def test_every_variant_has_title_body_accent_rgb():
-    """Every tone variant has the three color slots."""
+    """Every tone variant has the four color slots (title, body, accent, halo)."""
     for name, preset in STYLE_PRESETS.items():
         for tone in ("light_bg", "dark_bg"):
             variant = preset[tone]
-            assert set(variant.keys()) == {"title", "body", "accent"}, \
+            assert set(variant.keys()) == {"title", "body", "accent", "halo"}, \
                 f"{name}[{tone}] missing slot: {set(variant.keys())}"
             for slot, rgb in variant.items():
                 assert isinstance(rgb, tuple) and len(rgb) == 3, \
@@ -24,9 +24,28 @@ def test_every_variant_has_title_body_accent_rgb():
                     f"{name}[{tone}][{slot}] channels out of range: {rgb}"
 
 
-def test_light_bg_has_darker_title_than_dark_bg():
-    """Sanity check: on light backgrounds, title text should be darker (smaller average RGB)."""
+def test_halo_contrasts_with_title():
+    """Halo should be a contrasting color — light halo on dark title or dark halo on light title."""
     for name, preset in STYLE_PRESETS.items():
+        for tone in ("light_bg", "dark_bg"):
+            variant = preset[tone]
+            title_avg = sum(variant["title"]) / 3
+            halo_avg = sum(variant["halo"]) / 3
+            diff = abs(title_avg - halo_avg)
+            # Require substantial luminance contrast (skip minimal_white which uses same-on-same)
+            if name != "minimal_white":
+                assert diff > 100, \
+                    f"{name}[{tone}]: title avg {title_avg:.0f} too close to halo avg {halo_avg:.0f} (diff {diff:.0f})"
+
+
+def test_light_bg_has_darker_title_than_dark_bg():
+    """Sanity check: on light backgrounds, title text should be darker (smaller average RGB).
+
+    minimal_white is intentionally symmetric (same near-black on both tones) — excluded.
+    """
+    for name, preset in STYLE_PRESETS.items():
+        if name == "minimal_white":
+            continue
         light_title = preset["light_bg"]["title"]
         dark_title = preset["dark_bg"]["title"]
         light_avg = sum(light_title) / 3

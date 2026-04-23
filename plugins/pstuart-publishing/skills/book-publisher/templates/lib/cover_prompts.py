@@ -82,16 +82,23 @@ def build_variants(
     genre: str,
     palette_key: str,
     mood: str = "evocative",
+    compositions: list[tuple[str, bool]] | None = None,
 ) -> list[PromptVariant]:
-    """Build 3 prompt variants for a surface: 2 on-palette + 1 wildcard."""
+    """Build prompt variants for a surface: 2 on-palette + 1 wildcard.
+
+    If `compositions` is provided, use it instead of the hardcoded defaults
+    for this surface. Each element is a (composition_str, is_wildcard_bool)
+    tuple. Length not constrained (3 is conventional but users can pass more
+    for larger candidate sets).
+    """
     if palette_key not in PALETTE_DESCRIPTIONS:
         raise KeyError(f"Unknown palette_key {palette_key!r}")
 
-    compositions = _COMPOSITIONS[surface]
+    comps = compositions if compositions is not None else _COMPOSITIONS[surface]
     variants: list[PromptVariant] = []
     wildcard_idx = 0
 
-    for composition, is_wildcard in compositions:
+    for composition, is_wildcard in comps:
         if is_wildcard:
             wildcard_palette = _WILDCARD_PALETTES[wildcard_idx % len(_WILDCARD_PALETTES)]
             wildcard_idx += 1

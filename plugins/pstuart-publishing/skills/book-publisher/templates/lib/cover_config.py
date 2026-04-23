@@ -46,6 +46,7 @@ OPTIONAL_DEFAULTS: dict[str, Any] = {
     "background_tone": "light_bg",
     "paper_type": "white",
     "genre": "non-fiction",
+    "cover_compositions": {},  # {surface: [(str, bool), ...]} override for zgen prompts
 }
 
 # Known keys (used to detect typos)
@@ -120,6 +121,34 @@ def validate_and_defaults(raw: dict) -> dict:
                     f"BOOK_CONFIG[{key!r}] must be str, got {type(value).__name__}"
                 )
             result[key] = value
+
+    # 5a. Validate cover_compositions shape if provided
+    comps = result.get("cover_compositions", {})
+    if comps:
+        if not isinstance(comps, dict):
+            raise TypeError(
+                f"BOOK_CONFIG['cover_compositions'] must be dict, got {type(comps).__name__}"
+            )
+        for surface, entries in comps.items():
+            if surface not in ("wrap", "kindle", "motif"):
+                raise ValueError(
+                    f"BOOK_CONFIG['cover_compositions'] has unknown surface "
+                    f"{surface!r}; expected one of wrap/kindle/motif"
+                )
+            if not isinstance(entries, list):
+                raise TypeError(
+                    f"BOOK_CONFIG['cover_compositions'][{surface!r}] must be list, "
+                    f"got {type(entries).__name__}"
+                )
+            for i, entry in enumerate(entries):
+                if not (
+                    isinstance(entry, tuple) and len(entry) == 2
+                    and isinstance(entry[0], str) and isinstance(entry[1], bool)
+                ):
+                    raise ValueError(
+                        f"BOOK_CONFIG['cover_compositions'][{surface!r}][{i}] must be "
+                        f"(str, bool), got {entry!r}"
+                    )
 
     # 5. Legacy migration: back_body_lines -> blurb
     if "back_body_lines" in raw:

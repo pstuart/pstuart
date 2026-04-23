@@ -30,16 +30,16 @@ _COMPOSITIONS = {
         ("abstract geometric mandala, vertical symmetry, portrait composition", True),
     ],
     "motif": [
-        ("minimalist geometric mountain silhouette, lots of negative space, suitable for text overlay in bottom third", False),
-        ("simple flowing line-art wave pattern, lots of negative space, suitable for text overlay in bottom third", False),
-        ("intricate botanical line drawing, lots of negative space, suitable for text overlay in bottom third", True),
+        ("minimalist horizontal ornamental divider, symmetric flourish curls extending left and right, center medallion, wide banner aspect", False),
+        ("flowing line-art wave running horizontally across the banner, mid-height, wide banner aspect with subtle fade at edges", False),
+        ("intricate horizontal botanical vine, mirrored symmetry left-to-right, wide banner aspect, decorative page-opener style", True),
     ],
 }
 
 _SURFACE_TAGS = {
     "wrap": "cinematic landscape book-cover art, wide panoramic composition",
     "kindle": "cinematic portrait book-cover art",
-    "motif": "abstract chapter-opener motif",
+    "motif": "wide horizontal banner-aspect chapter-opener motif",
 }
 
 

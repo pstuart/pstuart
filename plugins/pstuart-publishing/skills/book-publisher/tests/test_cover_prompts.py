@@ -44,12 +44,13 @@ def test_kindle_prompts_specify_portrait_composition():
         assert "portrait" in v["prompt"].lower() or "vertical" in v["prompt"].lower()
 
 
-def test_motif_prompts_reserve_text_space():
+def test_motif_prompts_are_landscape_banner():
     variants = build_variants(
         surface="motif", genre="leadership", palette_key="navy_gold"
     )
     for v in variants:
-        assert "negative space" in v["prompt"].lower() or "text overlay" in v["prompt"].lower()
+        # Compositions must describe landscape-banner imagery (not portrait).
+        assert "banner" in v["prompt"].lower() or "horizontal" in v["prompt"].lower()
 
 
 def test_unknown_palette_raises():

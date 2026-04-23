@@ -22,6 +22,7 @@ OPTIONAL_DEFAULTS: dict[str, Any] = {
     "byline": "",
     "tagline": "",
     "back_tagline": "",
+    "kindle_quote": "",  # optional front-cover pull-quote (italic, above title)
     # Back cover zones
     "genre_line": "",
     "quote": "",
@@ -54,7 +55,7 @@ _LEGACY_KEYS = {"back_body_lines"}  # migrated, not considered unknown
 
 _STRING_REQUIRED = {"title", "author"}
 _STRING_OPTIONAL = {
-    "subtitle", "byline", "tagline", "back_tagline", "genre_line",
+    "subtitle", "byline", "tagline", "back_tagline", "kindle_quote", "genre_line",
     "quote", "quote_attribution", "author_bio", "author_bio_label",
     "series_line_front", "series_line_back", "publisher", "publisher_city",
     "imprint", "isbn", "price_us", "style_preset", "background_tone",

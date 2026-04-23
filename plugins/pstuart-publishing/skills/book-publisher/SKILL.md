@@ -697,8 +697,8 @@ pip3 install fpdf2 pypdf
 # EPUB generation
 pip3 install ebooklib
 
-# Cover generation
-pip3 install Pillow
+# Cover generation (Pillow for bitmap ops, python-barcode for ISBN EAN-13)
+pip3 install Pillow python-barcode
 
 # Word document conversion
 pip3 install python-docx

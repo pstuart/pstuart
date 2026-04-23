@@ -21,8 +21,11 @@ def test_register_fonts_returns_all_four_keys():
     pdf = FPDF()
     fonts = register_fonts(pdf)
     assert set(fonts.keys()) == {"regular", "italic", "bold", "bolditalic"}
-    for key, family in fonts.items():
-        assert isinstance(family, str) and family, f"{key} family is empty"
+    for key, value in fonts.items():
+        assert isinstance(value, tuple) and len(value) == 2, f"{key}: expected (family, style) tuple"
+        family, style = value
+        assert isinstance(family, str) and family, f"{key} family empty"
+        assert isinstance(style, str), f"{key} style must be str (possibly empty)"
 
 
 def test_registered_fonts_accept_unicode(tmp_path: Path):
@@ -30,25 +33,26 @@ def test_registered_fonts_accept_unicode(tmp_path: Path):
     pdf = FPDF(unit="in", format=(5.5, 8.5))
     fonts = register_fonts(pdf)
     pdf.add_page()
-    pdf.set_font(fonts["regular"], size=12)
+    pdf.set_font(*fonts["regular"], size=12)
     pdf.text(1, 1, "Historical – Fiction “The Mask”")
     out = tmp_path / "out.pdf"
     pdf.output(str(out))
     text = "\n".join(p.extract_text() or "" for p in PdfReader(str(out)).pages)
-    # en-dash must survive extraction
-    assert "–" in text or "Historical" in text
+    # en-dash MUST survive extraction — this is the test's whole purpose
+    assert "–" in text, f"en-dash not found in extracted text: {text!r}"
 
 
 def test_italic_and_bold_variants_apply(tmp_path: Path):
-    """After registering, set_font on each key should succeed."""
+    """After registering, set_font on each variant should succeed with unpacking."""
     pdf = FPDF()
     fonts = register_fonts(pdf)
     pdf.add_page()
-    # Each variant should accept set_font without error
-    for key, family in fonts.items():
-        pdf.set_font(family, size=10)
-    # The pdf should have all 4 fonts registered
-    assert len(pdf.fonts) >= 4
+    for key, (family, style) in fonts.items():
+        pdf.set_font(family, style, size=10)
+    # All 4 internal keys should be present
+    expected_keys = {"ebgaramond", "ebgaramondI", "ebgaramondB", "ebgaramondBI"}
+    assert expected_keys.issubset(pdf.fonts.keys()), \
+        f"missing: {expected_keys - pdf.fonts.keys()}"
 
 
 def test_register_fonts_idempotent_on_same_pdf():

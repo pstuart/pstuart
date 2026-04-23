@@ -11,7 +11,7 @@ from PIL import Image
 from pdf2image import convert_from_path
 
 from lib.cover_text import draw_centered_text
-from compose_paperback_wrap_template import STYLE_PRESETS
+from lib.cover_style import resolve_colors
 
 KINDLE_WIDTH_PX = 1600
 KINDLE_HEIGHT_PX = 2560
@@ -33,12 +33,8 @@ def compose_kindle(
             "Set TITLE and AUTHOR in BOOK_CONFIG before composing."
         )
     preset = book_config.get("style_preset", "navy_gold")
-    if preset not in STYLE_PRESETS:
-        raise ValueError(
-            f"book_config['style_preset']={preset!r} not in STYLE_PRESETS. "
-            f"Valid presets: {sorted(STYLE_PRESETS.keys())}"
-        )
-    colors = STYLE_PRESETS[preset]
+    tone = book_config.get("background_tone", "light_bg")
+    colors = resolve_colors(preset, tone=tone)
 
     # Build PDF at Kindle dimensions
     pdf = FPDF(unit="in", format=(KINDLE_WIDTH_IN, KINDLE_HEIGHT_IN))

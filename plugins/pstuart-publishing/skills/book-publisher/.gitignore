@@ -1,6 +1,7 @@
 templates/fixtures/sample_book/cover-assets/paperback_wrap.pdf
 templates/fixtures/sample_book/cover-assets/kindle_cover.jpg
-templates/fixtures/sample_book/assets/
+templates/fixtures/sample_book/assets/*
+!templates/fixtures/sample_book/assets/author_photo.png
 __pycache__/
 *.pyc
 .pytest_cache/

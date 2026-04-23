@@ -44,12 +44,13 @@ def test_kindle_prompts_specify_portrait_composition():
         assert "portrait" in v["prompt"].lower() or "vertical" in v["prompt"].lower()
 
 
-def test_motif_prompts_reserve_text_space():
+def test_motif_prompts_are_landscape_banner():
     variants = build_variants(
         surface="motif", genre="leadership", palette_key="navy_gold"
     )
     for v in variants:
-        assert "negative space" in v["prompt"].lower() or "text overlay" in v["prompt"].lower()
+        # Compositions must describe landscape-banner imagery (not portrait).
+        assert "banner" in v["prompt"].lower() or "horizontal" in v["prompt"].lower()
 
 
 def test_unknown_palette_raises():
@@ -62,3 +63,37 @@ def test_unknown_palette_raises():
             palette_key="neon_pink",
             mood="m",
         )
+
+
+def test_build_variants_with_custom_compositions():
+    """Custom compositions override the hardcoded defaults."""
+    import pytest
+    custom = [
+        ("Tudor printshop interior, wide panoramic Elizabethan scene", False),
+        ("abstract masked figure, dramatic chiaroscuro", True),
+    ]
+    variants = build_variants(
+        surface="wrap",
+        genre="historical thriller",
+        palette_key="burgundy_cream",
+        compositions=custom,
+    )
+    assert len(variants) == 2
+    # First is on-palette, second is wildcard
+    assert "Tudor printshop" in variants[0]["prompt"]
+    assert "masked figure" in variants[1]["prompt"]
+    assert variants[0]["is_wildcard"] is False
+    assert variants[1]["is_wildcard"] is True
+    # On-palette variant uses the requested palette
+    assert "burgundy" in variants[0]["prompt"].lower()
+    # Wildcard uses a different palette — one of the _WILDCARD_PALETTES values
+    wc_prompt = variants[1]["prompt"].lower()
+    assert any(pal in wc_prompt for pal in ("rust-red", "cobalt", "ochre"))
+
+
+def test_build_variants_without_compositions_uses_defaults():
+    """Omitting compositions param falls back to hardcoded _COMPOSITIONS."""
+    variants = build_variants(
+        surface="wrap", genre="leadership", palette_key="navy_gold",
+    )
+    assert len(variants) == 3  # hardcoded default has 3 entries per surface

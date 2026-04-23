@@ -159,8 +159,8 @@ def _render_back_panel(
                     y=barcode_y + barcode_h_in - 0.15,
                     size_pt=12, color=(20, 20, 20), font_key="bold",
                 )
-        except Exception as e:
-            # Bad ISBN or missing python-barcode — skip silently, log warning
+        except ValueError as e:
+            # Bad ISBN (rejected by cover_barcode validator) — skip silently, log warning
             print(f"WARNING: ISBN barcode render failed ({e}); skipping barcode zone")
             barcode_x = safe_right  # collapse zone so photo gets full width
 
@@ -282,6 +282,11 @@ def _render_spine(
 
     Mutates pdf in place. Skips silently if spine is too narrow for text.
     Also adds imprint mark at spine top when spine >= 0.5" and imprint is set.
+
+    Precondition: `fonts` dict must include the 'italic' key. This is
+    always satisfied when the caller ran `register_fonts(pdf)` first. If
+    the imprint path fires without the italic font registered, fpdf2 will
+    raise when attempting to use the unregistered core-italic fallback.
     """
     spine_start = offsets["spine_start"]
     spine_end = offsets["spine_end"]

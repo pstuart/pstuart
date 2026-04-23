@@ -1,0 +1,907 @@
+/* Book Publisher - Kindle Optimized EPUB Stylesheet */
+/* Navy/Gold professional theme with responsive styling */
+
+/* ==========================================================================
+   COLOR PALETTE
+   ========================================================================== */
+:root {
+    --primary-navy: #1e3a5f;
+    --accent-gold: #c9a227;
+    --light-gold: #f5e6b8;
+    --text-dark: #2c2c2c;
+    --text-light: #666666;
+    --border-light: #d0d0d0;
+    --bg-light: #f8f8f8;
+    --bg-subtle: #fafafa;
+    --success-green: #2d5a3d;
+    --warning-amber: #8b6914;
+}
+
+/* ==========================================================================
+   BASE STYLES
+   ========================================================================== */
+
+body {
+    font-family: Georgia, "Times New Roman", serif;
+    line-height: 1.5;
+    margin: 0;
+    padding: 0;
+    text-align: justify;
+    -webkit-hyphens: auto;
+    hyphens: auto;
+    color: #2c2c2c;
+}
+
+/* ==========================================================================
+   TITLE PAGE
+   ========================================================================== */
+
+.title-page {
+    text-align: center;
+    margin-top: 20%;
+    page-break-after: always;
+}
+
+.title-page .book-title {
+    font-size: 2.2em;
+    font-weight: bold;
+    margin-bottom: 0.3em;
+    letter-spacing: 0.05em;
+    text-transform: uppercase;
+    line-height: 1.2;
+}
+
+.title-page .book-subtitle {
+    font-size: 1.1em;
+    font-style: italic;
+    margin-bottom: 0.5em;
+    color: #c9a227;
+}
+
+.title-page .tagline {
+    font-size: 1em;
+    font-style: italic;
+    margin: 1.5em 0;
+}
+
+.title-page .author-name {
+    font-size: 1.2em;
+    margin-top: 2em;
+    font-weight: bold;
+}
+
+hr.decorative {
+    background-color: #c9a227;
+    height: 2px;
+    width: 40%;
+    border: none;
+    margin: 1.5em auto;
+}
+
+/* ==========================================================================
+   COPYRIGHT PAGE
+   ========================================================================== */
+
+.copyright-page {
+    font-size: 0.85em;
+    margin-top: 30%;
+    page-break-after: always;
+}
+
+.copyright-page p {
+    text-align: left;
+    margin: 0.5em 0;
+    text-indent: 0;
+}
+
+/* ==========================================================================
+   DEDICATION PAGE
+   ========================================================================== */
+
+.dedication-page {
+    text-align: center;
+    margin-top: 30%;
+    font-style: italic;
+    page-break-after: always;
+}
+
+/* ==========================================================================
+   PART PAGES
+   ========================================================================== */
+
+.part-page {
+    text-align: center;
+    margin-top: 35%;
+    page-break-before: always;
+    page-break-after: always;
+}
+
+.part-page .part-number {
+    font-size: 1.4em;
+    font-weight: bold;
+    text-transform: uppercase;
+    letter-spacing: 0.15em;
+    margin-bottom: 0.5em;
+    color: #1e3a5f;
+}
+
+.part-page .part-title {
+    font-size: 1.3em;
+    font-weight: bold;
+    margin-top: 0.5em;
+    color: #1e3a5f;
+}
+
+.part-page .part-subtitle {
+    font-size: 1.1em;
+    font-style: italic;
+    margin-top: 0.5em;
+    color: #666666;
+}
+
+/* ==========================================================================
+   CHAPTER HEADERS
+   ========================================================================== */
+
+.chapter-header {
+    text-align: center;
+    margin-top: 15%;
+    margin-bottom: 2em;
+    page-break-before: always;
+}
+
+.chapter-number {
+    font-size: 0.9em;
+    font-weight: normal;
+    text-transform: uppercase;
+    letter-spacing: 0.2em;
+    margin-bottom: 0.5em;
+    display: block;
+    color: #666666;
+}
+
+.chapter-title {
+    font-size: 1.6em;
+    font-weight: bold;
+    line-height: 1.3;
+    margin: 0;
+    color: #1e3a5f;
+}
+
+/* ==========================================================================
+   HEADINGS
+   ========================================================================== */
+
+h1 {
+    font-size: 1.8em;
+    font-weight: bold;
+    text-align: center;
+    margin: 1.5em 0 1em 0;
+    line-height: 1.3;
+    page-break-after: avoid;
+}
+
+h2 {
+    font-size: 1.3em;
+    font-weight: bold;
+    margin: 1.5em 0 0.8em 0;
+    line-height: 1.3;
+    page-break-after: avoid;
+    color: #1e3a5f;
+    border-bottom: 1px solid #d0d0d0;
+    padding-bottom: 0.3em;
+}
+
+h3 {
+    font-size: 1.1em;
+    font-weight: bold;
+    margin: 1.2em 0 0.6em 0;
+    line-height: 1.3;
+    page-break-after: avoid;
+    color: #2c2c2c;
+}
+
+h4 {
+    font-size: 1em;
+    font-weight: bold;
+    margin: 1em 0 0.5em 0;
+    page-break-after: avoid;
+}
+
+h5 {
+    font-size: 0.95em;
+    font-weight: bold;
+    margin: 0.8em 0 0.4em 0;
+    page-break-after: avoid;
+}
+
+h6 {
+    font-size: 0.9em;
+    font-weight: bold;
+    font-style: italic;
+    margin: 0.8em 0 0.4em 0;
+    page-break-after: avoid;
+}
+
+/* ==========================================================================
+   PARAGRAPHS
+   ========================================================================== */
+
+p {
+    margin: 0;
+    text-indent: 1.5em;
+    widows: 2;
+    orphans: 2;
+}
+
+/* No indent after headings, blockquotes, tables, etc. */
+h1 + p, h2 + p, h3 + p, h4 + p, h5 + p, h6 + p,
+.chapter-header + p,
+blockquote + p,
+table + p,
+.flowchart + p,
+.decision-tree + p,
+.key-principle + p,
+.key-insight + p,
+.key-takeaway + p,
+.tip + p,
+.note + p,
+.remember-box + p,
+.practical-tool + p,
+ul + p, ol + p,
+.no-indent {
+    text-indent: 0;
+}
+
+/* First paragraph of chapter */
+.chapter-header + p:first-of-type,
+.first-para {
+    text-indent: 0;
+}
+
+/* ==========================================================================
+   BLOCKQUOTES
+   ========================================================================== */
+
+blockquote {
+    margin: 1.2em 1.5em;
+    padding: 0.8em 1em;
+    font-style: italic;
+    text-indent: 0;
+    background-color: #fafafa;
+    border-left: 3px solid #c9a227;
+}
+
+blockquote p {
+    text-indent: 0;
+    margin: 0.5em 0;
+}
+
+blockquote p:first-child {
+    margin-top: 0;
+}
+
+blockquote p:last-child {
+    margin-bottom: 0;
+}
+
+blockquote cite,
+blockquote .attribution {
+    display: block;
+    text-align: right;
+    font-style: normal;
+    font-size: 0.9em;
+    margin-top: 0.5em;
+    color: #666666;
+}
+
+/* Scripture/verse styling */
+blockquote.scripture {
+    border-left-color: #1e3a5f;
+    background-color: #f8f8f8;
+}
+
+/* ==========================================================================
+   TABLES
+   ========================================================================== */
+
+table {
+    width: 100%;
+    border-collapse: collapse;
+    margin: 1.5em 0;
+    font-size: 0.95em;
+    page-break-inside: avoid;
+}
+
+thead {
+    background-color: #1e3a5f;
+    color: white;
+}
+
+th {
+    padding: 0.7em 0.8em;
+    text-align: left;
+    font-weight: bold;
+    border: 1px solid #1e3a5f;
+}
+
+td {
+    padding: 0.6em 0.8em;
+    border: 1px solid #d0d0d0;
+    vertical-align: top;
+}
+
+tbody tr:nth-child(even) {
+    background-color: #f8f8f8;
+}
+
+/* Checkbox column styling */
+td.checkbox {
+    text-align: center;
+    width: 3em;
+    font-size: 1.2em;
+}
+
+/* Checklist table */
+table.checklist td:last-child,
+table.checklist th:last-child {
+    width: 4em;
+    text-align: center;
+}
+
+/* Response guide table */
+table.response-guide td:first-child {
+    font-weight: bold;
+    color: #1e3a5f;
+    width: 25%;
+}
+
+/* Comparison table */
+table.comparison th {
+    text-align: center;
+}
+
+/* ==========================================================================
+   DECISION TREES / FLOWCHARTS
+   ========================================================================== */
+
+.decision-tree,
+.flowchart {
+    margin: 1.5em 0;
+    padding: 1em;
+    background-color: #f8f8f8;
+    border: 1px solid #d0d0d0;
+    border-radius: 4px;
+    font-family: "Helvetica Neue", Arial, sans-serif;
+    font-size: 0.95em;
+    page-break-inside: avoid;
+}
+
+.decision-tree .title,
+.flowchart .title {
+    font-weight: bold;
+    color: #1e3a5f;
+    font-size: 1.1em;
+    margin-bottom: 0.8em;
+    text-align: center;
+    border-bottom: 2px solid #c9a227;
+    padding-bottom: 0.5em;
+}
+
+.decision-tree .question,
+.flowchart .question {
+    font-weight: bold;
+    color: #1e3a5f;
+    margin-bottom: 0.5em;
+    padding: 0.5em;
+    background-color: white;
+    border-left: 3px solid #c9a227;
+}
+
+.decision-tree .step,
+.flowchart .step {
+    margin: 0.8em 0;
+    padding: 0.5em 0.8em;
+    background-color: white;
+    border: 1px solid #d0d0d0;
+    border-radius: 4px;
+}
+
+.decision-tree .step-number,
+.flowchart .step-number {
+    display: inline-block;
+    width: 1.5em;
+    height: 1.5em;
+    line-height: 1.5em;
+    text-align: center;
+    background-color: #c9a227;
+    color: white;
+    border-radius: 50%;
+    font-weight: bold;
+    font-size: 0.9em;
+    margin-right: 0.5em;
+}
+
+.decision-tree .branch,
+.flowchart .branch {
+    margin-left: 1.5em;
+    padding: 0.3em 0;
+}
+
+.decision-tree .branch-yes,
+.flowchart .branch-yes {
+    color: #2d5a3d;
+}
+
+.decision-tree .branch-no,
+.flowchart .branch-no {
+    color: #8b6914;
+}
+
+.decision-tree .arrow,
+.flowchart .arrow {
+    color: #666666;
+    margin: 0 0.3em;
+}
+
+.decision-tree .outcome,
+.flowchart .outcome {
+    font-style: italic;
+    background-color: #f5e6b8;
+    padding: 0.3em 0.6em;
+    border-radius: 3px;
+    display: inline-block;
+    margin-left: 0.5em;
+}
+
+/* Vertical connector */
+.decision-tree .connector,
+.flowchart .connector {
+    text-align: center;
+    color: #c9a227;
+    font-size: 1.5em;
+    margin: 0.3em 0;
+}
+
+/* ==========================================================================
+   CHECKLISTS
+   ========================================================================== */
+
+ul.checklist {
+    list-style: none;
+    padding-left: 0;
+    margin: 0.5em 0;
+}
+
+ul.checklist li {
+    padding: 0.4em 0 0.4em 2em;
+    position: relative;
+    margin: 0;
+}
+
+ul.checklist li::before {
+    content: "\2610"; /* ☐ empty checkbox */
+    position: absolute;
+    left: 0;
+    color: #1e3a5f;
+    font-size: 1.1em;
+}
+
+ul.checklist li.checked::before {
+    content: "\2611"; /* ☑ checked checkbox */
+    color: #2d5a3d;
+}
+
+/* Alternative checkbox styles */
+.checkbox-empty::before {
+    content: "\2610";
+}
+
+.checkbox-checked::before {
+    content: "\2611";
+}
+
+/* ==========================================================================
+   PRACTICAL TOOLS SECTIONS
+   ========================================================================== */
+
+.practical-tool {
+    margin: 2em 0;
+    padding: 1.5em;
+    background-color: #fafafa;
+    border: 2px solid #c9a227;
+    border-radius: 4px;
+    page-break-inside: avoid;
+}
+
+.practical-tool h3 {
+    margin-top: 0;
+    color: #1e3a5f;
+    border-bottom: 1px solid #c9a227;
+    padding-bottom: 0.5em;
+}
+
+.practical-tool h4 {
+    color: #1e3a5f;
+    margin-top: 1em;
+}
+
+/* ==========================================================================
+   KEY PRINCIPLES / CALLOUTS
+   ========================================================================== */
+
+.key-principle {
+    margin: 1.5em 0;
+    padding: 1em 1.2em;
+    background-color: #f5e6b8;
+    border-left: 4px solid #c9a227;
+    font-weight: bold;
+    text-indent: 0;
+}
+
+.tip, .note {
+    margin: 1.5em 0;
+    padding: 1em 1.2em;
+    background-color: #f0f7fa;
+    border-left: 4px solid #1e3a5f;
+    text-indent: 0;
+}
+
+.tip strong, .note strong {
+    color: #1e3a5f;
+}
+
+.key-insight {
+    margin: 1.5em 0;
+    padding: 1em 1.2em;
+    background-color: #fff8e6;
+    border-left: 4px solid #c9a227;
+    font-style: italic;
+    text-indent: 0;
+}
+
+.key-takeaway {
+    margin: 1.5em 0;
+    padding: 1em 1.2em;
+    background-color: #f5e6b8;
+    border-left: 4px solid #c9a227;
+}
+
+.key-takeaway strong {
+    color: #1e3a5f;
+}
+
+.remember-box {
+    margin: 1.5em 0;
+    padding: 1em;
+    background-color: #f8f8f8;
+    border: 1px solid #1e3a5f;
+    text-align: center;
+}
+
+.remember-box strong {
+    color: #1e3a5f;
+}
+
+.warning-box {
+    margin: 1.5em 0;
+    padding: 1em;
+    background-color: #fff8e6;
+    border-left: 4px solid #8b6914;
+}
+
+.success-box {
+    margin: 1.5em 0;
+    padding: 1em;
+    background-color: #e8f5e9;
+    border-left: 4px solid #2d5a3d;
+}
+
+/* Pull quote style */
+.pull-quote {
+    margin: 2em 1em;
+    padding: 1em 1.5em;
+    border-top: 2px solid #c9a227;
+    border-bottom: 2px solid #c9a227;
+    font-size: 1.1em;
+    font-style: italic;
+    text-align: center;
+    color: #1e3a5f;
+}
+
+/* ==========================================================================
+   SECTION DIVIDERS
+   ========================================================================== */
+
+hr {
+    border: none;
+    height: 1px;
+    background-color: #d0d0d0;
+    margin: 2em auto;
+    width: 30%;
+}
+
+hr.section-break {
+    margin: 1.5em auto;
+    width: 20%;
+}
+
+hr.chapter-end {
+    margin: 3em auto 2em;
+    width: 40%;
+    height: 3px;
+    background: #c9a227;
+}
+
+hr.decorative-diamond {
+    background: none;
+    height: auto;
+    text-align: center;
+}
+
+hr.decorative-diamond::after {
+    content: "\25C6"; /* ◆ diamond */
+    color: #c9a227;
+    font-size: 0.8em;
+}
+
+/* ==========================================================================
+   LISTS
+   ========================================================================== */
+
+ul, ol {
+    margin: 1em 0;
+    padding-left: 2em;
+}
+
+li {
+    margin: 0.4em 0;
+    text-indent: 0;
+}
+
+li p {
+    text-indent: 0;
+    margin: 0;
+}
+
+/* Nested lists */
+ul ul, ol ol, ul ol, ol ul {
+    margin: 0.3em 0;
+}
+
+/* Definition list */
+dl {
+    margin: 1em 0;
+}
+
+dt {
+    font-weight: bold;
+    color: #1e3a5f;
+    margin-top: 0.8em;
+}
+
+dd {
+    margin-left: 2em;
+    margin-bottom: 0.5em;
+}
+
+/* ==========================================================================
+   TABLE OF CONTENTS
+   ========================================================================== */
+
+nav h1, nav h2 {
+    text-align: center;
+    font-size: 1.5em;
+    margin-bottom: 1.5em;
+    border-bottom: none;
+}
+
+nav ol {
+    list-style: none;
+    padding: 0;
+    margin: 0;
+}
+
+nav li {
+    margin: 0.6em 0;
+}
+
+nav li a {
+    text-decoration: none;
+    color: inherit;
+}
+
+nav li.toc-part {
+    font-weight: bold;
+    margin-top: 1.2em;
+    text-transform: uppercase;
+    font-size: 0.95em;
+    letter-spacing: 0.05em;
+    color: #1e3a5f;
+}
+
+nav li.toc-chapter {
+    padding-left: 1em;
+}
+
+nav li.toc-section {
+    padding-left: 2em;
+    font-size: 0.9em;
+    color: #666666;
+}
+
+/* ==========================================================================
+   FOOTNOTES
+   ========================================================================== */
+
+.footnote {
+    font-size: 0.85em;
+    color: #666666;
+}
+
+.footnote-ref {
+    vertical-align: super;
+    font-size: 0.75em;
+    color: #1e3a5f;
+}
+
+aside.footnote {
+    font-size: 0.85em;
+    border-top: 1px solid #d0d0d0;
+    margin-top: 2em;
+    padding-top: 0.5em;
+}
+
+/* ==========================================================================
+   INDEX
+   ========================================================================== */
+
+.index-section {
+    margin-bottom: 1.5em;
+}
+
+.index-letter {
+    font-size: 1.3em;
+    font-weight: bold;
+    color: #1e3a5f;
+    border-bottom: 2px solid #c9a227;
+    margin-bottom: 0.5em;
+    padding-bottom: 0.2em;
+}
+
+.index-entry {
+    margin: 0.3em 0;
+}
+
+.index-subentry {
+    margin-left: 1.5em;
+}
+
+.index-pages {
+    color: #666666;
+}
+
+/* ==========================================================================
+   KINDLE OPTIMIZATIONS
+   ========================================================================== */
+
+img {
+    max-width: 100%;
+    height: auto;
+}
+
+/* Page breaks */
+.page-break-before {
+    page-break-before: always;
+}
+
+.page-break-after {
+    page-break-after: always;
+}
+
+.no-page-break {
+    page-break-inside: avoid;
+}
+
+/* Kindle-specific adjustments */
+@media amzn-kf8 {
+    body {
+        font-family: Georgia, serif;
+    }
+
+    .chapter-header {
+        margin-top: 10%;
+    }
+
+    .part-page {
+        margin-top: 25%;
+    }
+}
+
+@media amzn-mobi {
+    body {
+        font-family: serif;
+    }
+
+    /* Simplified styling for older Kindles */
+    .key-principle,
+    .key-insight,
+    .tip,
+    .note,
+    .remember-box,
+    .practical-tool {
+        border: 1px solid #999;
+        padding: 0.5em;
+    }
+
+    blockquote {
+        border-left: 2px solid #999;
+    }
+}
+
+/* Dark mode support */
+@media (prefers-color-scheme: dark) {
+    body {
+        background-color: #1a1a1a;
+        color: #e0e0e0;
+    }
+
+    h1, h2, h3, .chapter-title {
+        color: #7ba3d4;
+    }
+
+    .key-principle,
+    .key-takeaway,
+    .key-insight {
+        background-color: #2a2520;
+        border-color: #c9a227;
+    }
+
+    .tip, .note {
+        background-color: #1a2530;
+        border-color: #7ba3d4;
+    }
+
+    blockquote {
+        background-color: #252525;
+    }
+
+    table thead {
+        background-color: #2a3a4f;
+    }
+
+    table td {
+        border-color: #404040;
+    }
+
+    tbody tr:nth-child(even) {
+        background-color: #252525;
+    }
+}
+
+/* ==========================================================================
+   UTILITY CLASSES
+   ========================================================================== */
+
+.text-center { text-align: center; }
+.text-left { text-align: left; }
+.text-right { text-align: right; }
+
+.small { font-size: 0.85em; }
+.large { font-size: 1.15em; }
+
+.bold { font-weight: bold; }
+.italic { font-style: italic; }
+
+.navy { color: #1e3a5f; }
+.gold { color: #c9a227; }
+.muted { color: #666666; }
+
+.mt-0 { margin-top: 0; }
+.mb-0 { margin-bottom: 0; }
+.mt-1 { margin-top: 1em; }
+.mb-1 { margin-bottom: 1em; }
+.mt-2 { margin-top: 2em; }
+.mb-2 { margin-bottom: 2em; }
+
+.hidden { display: none; }

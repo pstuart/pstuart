@@ -56,7 +56,8 @@ def _render_front_panel(
 
     # Title (required — always present after validate_and_defaults)
     title = config["title"].upper()
-    draw_bold_text(pdf, title, cx, safe_top + 1.2, size_pt=40, color=colors["title"])
+    draw_bold_text(pdf, title, cx, safe_top + 1.2, size_pt=40, color=colors["title"],
+                   halo=colors["halo"])
 
     # Subtitle (optional)
     if config.get("subtitle"):
@@ -64,6 +65,7 @@ def _render_front_panel(
             pdf, text=config["subtitle"],
             x_center=cx, y=safe_top + 1.9,
             size_pt=18, color=colors["accent"], font_key="italic",
+            halo=colors["halo"],
         )
 
     # Flourish rule — always drawn; anchors the byline visually
@@ -72,7 +74,8 @@ def _render_front_panel(
 
     # Byline: config["byline"] override, or "BY {AUTHOR}"
     byline_text = config.get("byline") or f"BY {config['author'].upper()}"
-    draw_bold_text(pdf, byline_text, cx, safe_bottom - 1.5, size_pt=18, color=colors["title"])
+    draw_bold_text(pdf, byline_text, cx, safe_bottom - 1.5, size_pt=18, color=colors["title"],
+                   halo=colors["halo"])
 
     # Series line (very bottom, optional)
     if config.get("series_line_front"):
@@ -80,6 +83,7 @@ def _render_front_panel(
             pdf, text=config["series_line_front"],
             x_center=cx, y=safe_bottom - 0.3,
             size_pt=12, color=colors["body"], font_key="italic",
+            halo=colors["halo"],
         )
 
 
@@ -115,6 +119,7 @@ def _render_back_panel(
             pdf, text=config["series_line_back"],
             x_center=cx, y=series_y,
             size_pt=10, color=colors["body"], font_key="italic",
+            halo=colors["halo"],
         )
 
     # Publisher line (above series)
@@ -129,6 +134,7 @@ def _render_back_panel(
             pdf, text=publisher_text,
             x_center=cx, y=publisher_y,
             size_pt=10, color=colors["body"], font_key="italic",
+            halo=colors["halo"],
         )
 
     # Barcode zone (bottom-right, 1.75"w × 0.9"h, above publisher line)
@@ -186,6 +192,7 @@ def _render_back_panel(
             pdf, text=config["genre_line"],
             x_center=cx, y=cur_y,
             size_pt=14, color=colors["body"], font_key="italic",
+            halo=colors["halo"],
         )
         cur_y += 0.35
         draw_flourish_rule(pdf, x_center=cx, y=cur_y, half_width=1.6, color=colors["accent"])
@@ -198,6 +205,7 @@ def _render_back_panel(
             draw_centered_text(
                 pdf, text=line, x_center=cx, y=cur_y,
                 size_pt=18, color=colors["title"], font_key="italic",
+                halo=colors["halo"],
             )
             cur_y += 0.27
         cur_y += 0.1
@@ -215,6 +223,7 @@ def _render_back_panel(
             draw_centered_text(
                 pdf, text=display, x_center=cx, y=cur_y,
                 size_pt=12, color=colors["body"], font_key="italic",
+                halo=colors["halo"],
             )
             cur_y += 0.22
         if config.get("quote_attribution"):
@@ -223,6 +232,7 @@ def _render_back_panel(
                 pdf, text=f"— {config['quote_attribution']}",
                 x_center=cx, y=cur_y,
                 size_pt=10, color=colors["body"], font_key="italic",
+                halo=colors["halo"],
             )
             cur_y += 0.25
         draw_ink_rule(
@@ -242,6 +252,7 @@ def _render_back_panel(
                 draw_left_aligned_block(
                     pdf, lines=[line], x=safe_left, y=cur_y,
                     size_pt=11, color=colors["body"], line_height_in=0.18,
+                    halo=colors["halo"],
                 )
             cur_y += 0.18
         cur_y += 0.1
@@ -257,6 +268,7 @@ def _render_back_panel(
             pdf, text=config.get("author_bio_label", "About the Author"),
             x_center=safe_left + 1.0, y=cur_y,
             size_pt=11, color=colors["accent"],
+            halo=colors["halo"],
         )
         cur_y += 0.2
         bio_lines = config["author_bio"].split("\n")
@@ -267,6 +279,7 @@ def _render_back_panel(
             draw_italic_block(
                 pdf, lines=[line], x=bio_x, y=cur_y,
                 size_pt=10, color=colors["body"], line_height_in=0.17,
+                halo=colors["halo"],
             )
             cur_y += 0.17
 
@@ -298,6 +311,7 @@ def _render_spine(
         spine_start_x=spine_start, spine_width=spine_w,
         wrap_height=wrap_height,
         size_pt=10, color=colors["title"], font_key="regular",
+        halo=colors["halo"],
     )
     # Imprint mark at spine top (bookshelf-visible; only if wide enough and present)
     if spine_w >= 0.5 and config.get("imprint"):

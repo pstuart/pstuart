@@ -57,6 +57,7 @@ def compose_kindle(
             pdf, text=config["kindle_quote"],
             x_center=center_x, y=1.1,
             size_pt=16, color=colors["accent"], font_key="italic",
+            halo=colors["halo"],
         )
 
     # Zone 2: title (bold, uppercased)
@@ -64,6 +65,7 @@ def compose_kindle(
         pdf, text=config["title"].upper(),
         x_center=center_x, y=1.9,
         size_pt=56, color=colors["title"],
+        halo=colors["halo"],
     )
 
     # Zone 3: subtitle — uses ACCENT color (fixes #663: reads over any bg tone)
@@ -72,6 +74,7 @@ def compose_kindle(
             pdf, text=config["subtitle"],
             x_center=center_x, y=2.7,
             size_pt=20, color=colors["accent"], font_key="italic",
+            halo=colors["halo"],
         )
 
     # Zone 4: author (bold, uppercased) — sit near bottom
@@ -79,6 +82,7 @@ def compose_kindle(
         pdf, text=config["author"].upper(),
         x_center=center_x, y=KINDLE_HEIGHT_IN - 1.1,
         size_pt=24, color=colors["title"],
+        halo=colors["halo"],
     )
 
     # Zone 5: optional series line (very bottom)
@@ -87,6 +91,7 @@ def compose_kindle(
             pdf, text=config["series_line_front"],
             x_center=center_x, y=KINDLE_HEIGHT_IN - 0.5,
             size_pt=12, color=colors["body"], font_key="italic",
+            halo=colors["halo"],
         )
 
     # Rasterize (Kindle requires JPEG per KDP spec)

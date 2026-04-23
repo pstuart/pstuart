@@ -1,14 +1,19 @@
 #!/usr/bin/env python3
 """Stage the approved chapter motif PNG into the book's assets directory.
 
-Crops from the zgen output (1664x2560) to the canonical interior motif
-size (1650x2550, which is 5.5x8.5 at 300 DPI).
+Crops from the zgen output (1664x1088) to the canonical interior motif
+size (1650x1020 = 5.5" x 3.4" at 300 DPI). That matches the landscape
+banner shape that generate_pdf renders at the top of each chapter page.
+
+Previous versions used portrait (1650x2550); those get stretched 2.5×
+vertical by fpdf2.image() into the banner area — distorted art. This
+version generates at banner aspect from the start.
 """
 from pathlib import Path
 from PIL import Image
 
 MOTIF_WIDTH_PX = 1650
-MOTIF_HEIGHT_PX = 2550
+MOTIF_HEIGHT_PX = 1020
 
 
 def stage_motif(source: Path, dest_dir: Path) -> Path:

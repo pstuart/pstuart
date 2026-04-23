@@ -21,7 +21,7 @@ from lib.zgen_runner import run_zgen
 SURFACE_DIMS = {
     "wrap":   {"width": 4992, "height": 2624},
     "kindle": {"width": 1600, "height": 2560},
-    "motif":  {"width": 1664, "height": 2560},
+    "motif":  {"width": 1664, "height": 1088},
 }
 SURFACES = ["wrap", "kindle", "motif"]
 

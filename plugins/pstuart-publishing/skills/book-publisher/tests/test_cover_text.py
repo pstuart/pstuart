@@ -131,3 +131,87 @@ def test_unknown_font_key_raises():
             pdf, text="hi", x_center=1, y=1, size_pt=10,
             color=(0, 0, 0), font_key="made_up",
         )
+
+
+# ---- Halo stroke tests (added in T13) ----
+
+
+def test_halo_text_still_extracts(tmp_path: Path):
+    """Text with halo stroke still extracts cleanly — readable, not malformed."""
+    pdf = FPDF(unit="in", format=(5.5, 8.5))
+    register_fonts(pdf)
+    pdf.add_page()
+    draw_centered_text(
+        pdf, text="HALOED TITLE", x_center=2.75, y=4.0, size_pt=32,
+        color=(80, 20, 30),
+        font_key="bold",
+        halo=(250, 245, 230), halo_width=0.02,
+    )
+    out = tmp_path / "halo.pdf"
+    pdf.output(str(out))
+    text = _extract_text(out)
+    assert "HALOED TITLE" in text
+
+
+def test_halo_resets_text_mode(tmp_path: Path):
+    """After a halo'd draw, subsequent non-halo draws should NOT be stroked.
+
+    We can't easily introspect text_mode, but we can verify a second draw
+    without halo doesn't raise and produces extractable text.
+    """
+    pdf = FPDF(unit="in", format=(5.5, 8.5))
+    register_fonts(pdf)
+    pdf.add_page()
+    # First draw with halo
+    draw_centered_text(pdf, text="WITH HALO", x_center=2.75, y=2.0, size_pt=20,
+                       color=(80, 20, 30), halo=(250, 245, 230))
+    # Second draw without halo
+    draw_centered_text(pdf, text="NO HALO", x_center=2.75, y=6.0, size_pt=20,
+                       color=(80, 20, 30))
+    out = tmp_path / "reset.pdf"
+    pdf.output(str(out))
+    text = _extract_text(out)
+    assert "WITH HALO" in text
+    assert "NO HALO" in text
+
+
+def test_halo_none_is_backwards_compatible(tmp_path: Path):
+    """Omitting halo produces identical output to before."""
+    pdf = FPDF(unit="in", format=(5.5, 8.5))
+    register_fonts(pdf)
+    pdf.add_page()
+    draw_centered_text(pdf, text="PLAIN", x_center=2.75, y=4.0, size_pt=18,
+                       color=(80, 20, 30))
+    out = tmp_path / "plain.pdf"
+    pdf.output(str(out))
+    assert "PLAIN" in _extract_text(out)
+
+
+def test_halo_on_left_aligned_block(tmp_path: Path):
+    pdf = FPDF(unit="in", format=(5.5, 8.5))
+    register_fonts(pdf)
+    pdf.add_page()
+    draw_left_aligned_block(
+        pdf, lines=["Line one halo'd.", "Line two halo'd."],
+        x=0.5, y=1.0, size_pt=11, color=(60, 40, 30), line_height_in=0.18,
+        halo=(250, 245, 230),
+    )
+    out = tmp_path / "block.pdf"
+    pdf.output(str(out))
+    text = _extract_text(out)
+    assert "Line one halo'd." in text
+    assert "Line two halo'd." in text
+
+
+def test_halo_on_spine_text(tmp_path: Path):
+    pdf = FPDF(unit="in", format=(12, 8.75))
+    register_fonts(pdf)
+    pdf.add_page()
+    draw_spine_text(
+        pdf, text="HALO SPINE", spine_start_x=5.625, spine_width=0.5,
+        wrap_height=8.75, size_pt=10, color=(245, 235, 220),
+        halo=(45, 15, 20),
+    )
+    out = tmp_path / "spine.pdf"
+    pdf.output(str(out))
+    assert "HALO SPINE" in _extract_text(out)

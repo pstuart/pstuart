@@ -27,18 +27,7 @@ from lib.cover_text import (
     draw_left_aligned_block,
     draw_spine_text,
 )
-
-
-STYLE_PRESETS = {
-    "navy_gold": {"title": (255, 255, 255), "body": (240, 240, 240), "accent": (218, 165, 32)},
-    "burgundy_cream": {"title": (245, 235, 220), "body": (230, 220, 210), "accent": (200, 170, 100)},
-    "teal_coral": {"title": (255, 255, 255), "body": (240, 240, 240), "accent": (255, 127, 102)},
-    "black_silver": {"title": (240, 240, 240), "body": (200, 200, 200), "accent": (192, 192, 192)},
-    "earth_warm": {"title": (255, 250, 240), "body": (240, 225, 200), "accent": (218, 165, 32)},
-    "purple_gold": {"title": (255, 245, 230), "body": (230, 220, 210), "accent": (218, 165, 32)},
-    "forest_cream": {"title": (255, 248, 220), "body": (245, 235, 210), "accent": (200, 180, 100)},
-    "minimal_white": {"title": (30, 30, 30), "body": (60, 60, 60), "accent": (120, 120, 120)},
-}
+from lib.cover_style import resolve_colors
 
 
 def compose_wrap(
@@ -61,12 +50,8 @@ def compose_wrap(
     page_count = book_config["page_count"]
     paper = book_config.get("paper_type", "white")
     preset = book_config.get("style_preset", "navy_gold")
-    if preset not in STYLE_PRESETS:
-        raise ValueError(
-            f"book_config['style_preset']={preset!r} not in STYLE_PRESETS. "
-            f"Valid presets: {sorted(STYLE_PRESETS.keys())}"
-        )
-    colors = STYLE_PRESETS[preset]
+    tone = book_config.get("background_tone", "light_bg")
+    colors = resolve_colors(preset, tone=tone)
 
     wrap_w, wrap_h = wrap_canvas_inches(page_count, paper)
     offsets = panel_offsets_inches(page_count, paper)

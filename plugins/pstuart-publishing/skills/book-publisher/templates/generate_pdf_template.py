@@ -335,58 +335,111 @@ BACK_COVER_FEATURES = [
 # TEXT UTILITIES
 # ============================================================================
 
+# Typography behavior. Override in BOOK_CONFIG (or at the top of your
+# project's generate_pdf.py) to opt out of any of these.
+#   preserve_unicode  \u2014 keep em/en dashes, curly quotes, ellipsis, bullets
+#                       as the actual glyphs (requires a Unicode TTF, which
+#                       this template loads). Set False for legacy core-font
+#                       workflows that need cp1252 fallback.
+#   smart_quotes      \u2014 convert straight ASCII "/' to typographic curly
+#                       quotes via a Smartypants-style algorithm.
+#   double_hyphen_to_em \u2014 convert `--` in source to em-dash. Off by default;
+#                       leave it off if your manuscript uses em-dashes
+#                       directly and `--` is meaningful (e.g. CLI flags in a
+#                       technical book).
+TYPOGRAPHY = {
+    "preserve_unicode": True,
+    "smart_quotes": True,
+    "double_hyphen_to_em": False,
+}
+
+
+def strip_html_comments(text):
+    """Remove HTML comment blocks (research-source footers, draft notes).
+    Run this on raw chapter content before parsing so the comments never
+    reach a renderer."""
+    return re.sub(r'<!--.*?-->', '', text, flags=re.DOTALL)
+
+
+def _smarten_quotes(text):
+    """Smartypants-style ASCII \u2192 curly conversion. Apostrophes inside or
+    after words become right-single (\u2019); leading single quotes after a
+    word boundary become left-single. Same logic for double quotes.
+    Existing curly quotes pass through untouched."""
+    text = re.sub(r"(?<=[A-Za-z])'(?=[A-Za-z])", '\u2019', text)
+    text = re.sub(r"(?<=\d)'(?=s\b)", '\u2019', text)
+    text = re.sub(r"\B'(?=\d{2}s\b)", '\u2019', text)
+    text = re.sub(r"(^|[\s\(\[\{\u2014\-])'", r"\1\u2018", text)
+    text = re.sub(r"'", '\u2019', text)
+    text = re.sub(r'(^|[\s\(\[\{\u2014\-])"', r'\1\u201c', text)
+    text = re.sub(r'"', '\u201d', text)
+    return text
+
+
 def sanitize_text(text):
-    """Normalize text and handle Unicode characters for PDF output."""
-    # Convert double hyphens to em dash
-    text = text.replace('--', '\u2014')
+    """Normalize text for PDF output.
 
-    # Unicode replacements for latin-1 compatibility
-    replacements = {
-        '\u2013': '-',        # en dash to hyphen
-        '\u2014': '-',        # em dash to hyphen (after conversion)
-        '\u2018': "'",        # left single quote
-        '\u2019': "'",        # right single quote
-        '\u201c': '"',        # left double quote
-        '\u201d': '"',        # right double quote
-        '\u2026': '...',      # ellipsis
-        '\u2022': '-',        # bullet
-        '\u00a0': ' ',        # non-breaking space
-        '\u00a9': '(c)',      # copyright
-        '\u00ae': '(R)',      # registered
-        '\u2122': '(TM)',     # trademark
-        '\u2212': '-',        # minus sign
-        '\u00d7': 'x',        # multiplication
-        '\u2032': "'",        # prime
-        '\u2033': '"',        # double prime
-        '\u00b7': '-',        # middle dot
-        '\u2010': '-',        # hyphen
-        '\u2011': '-',        # non-breaking hyphen
-        '\ufffd': '?',        # replacement character
-        '\u2500': '-',        # horizontal line
-        '\u2502': '|',        # vertical line
-        '\u251c': '|--',      # T-branch right
-        '\u2514': '`--',      # L-corner
-        '\u2192': '->',       # right arrow
-        '\u2190': '<-',       # left arrow
-    }
-    for char, repl in replacements.items():
-        text = text.replace(char, repl)
+    Default mode (preserve_unicode=True) keeps em/en dashes, curly quotes,
+    ellipses, and bullets as the actual glyphs \u2014 TTF-loaded Unicode fonts
+    render them correctly. The legacy mode (preserve_unicode=False)
+    collapses to latin-1 for old core-font workflows.
+    """
+    if TYPOGRAPHY.get("double_hyphen_to_em", False):
+        text = text.replace('--', '\u2014')
 
-    return text.encode('cp1252', errors='replace').decode('cp1252')
+    if not TYPOGRAPHY.get("preserve_unicode", True):
+        replacements = {
+            '\u2013': '-', '\u2014': '-',
+            '\u2018': "'", '\u2019': "'",
+            '\u201c': '"', '\u201d': '"',
+            '\u2026': '...', '\u2022': '-',
+            '\u00a0': ' ',
+            '\u00a9': '(c)', '\u00ae': '(R)', '\u2122': '(TM)',
+            '\u2212': '-', '\u00d7': 'x',
+            '\u2032': "'", '\u2033': '"', '\u00b7': '-',
+            '\u2010': '-', '\u2011': '-',
+            '\ufffd': '?',
+            '\u2500': '-', '\u2502': '|',
+            '\u251c': '|--', '\u2514': '`--',
+            '\u2192': '->', '\u2190': '<-',
+        }
+        for char, repl in replacements.items():
+            text = text.replace(char, repl)
+        return text.encode('cp1252', errors='replace').decode('cp1252')
+
+    # Preserve mode: just normalize the always-problematic non-breaking
+    # space and the replacement-char glyph.
+    text = text.replace('\u00a0', ' ').replace('\ufffd', '?')
+    if TYPOGRAPHY.get("smart_quotes", True):
+        text = _smarten_quotes(text)
+    return text
 
 
 def strip_markdown(text):
-    """Remove markdown formatting and convert to plain text."""
+    """Remove markdown formatting and convert to plain text. Iterative so
+    nested emphasis (e.g. `**bold *italic*** `) collapses fully."""
     text = sanitize_text(text)
-    # Convert checkboxes to markers for later rendering
     text = re.sub(r'\[\s*[xX]\s*\]', '\x01CHECKED\x01', text)
     text = re.sub(r'\[\s*\]', '\x01UNCHECKED\x01', text)
-    # Remove markdown formatting
-    text = re.sub(r'\*\*(.+?)\*\*', r'\1', text)  # Bold
-    text = re.sub(r'\*(.+?)\*', r'\1', text)      # Italic
-    text = re.sub(r'_(.+?)_', r'\1', text)        # Underscore italic
-    text = re.sub(r'`(.+?)`', r'\1', text)        # Code
-    text = re.sub(r'\[(.+?)\]\(.+?\)', r'\1', text)  # Links
+
+    inline_patterns = [
+        (re.compile(r'\*\*\*([^*]+)\*\*\*'), r'\1'),
+        (re.compile(r'___([^_]+)___'), r'\1'),
+        (re.compile(r'\*\*([^*]+?)\*([^*]+)\*\*\*'), r'\1\2'),
+        (re.compile(r'\*\*(.+?)\*\*'), r'\1'),
+        (re.compile(r'__(.+?)__'), r'\1'),
+        (re.compile(r'(?<![\w*])\*([^*\n]+)\*(?![\w*])'), r'\1'),
+        (re.compile(r'(?<!\w)_([^_\n]+)_(?!\w)'), r'\1'),
+        (re.compile(r'~~([^~]+)~~'), r'\1'),
+        (re.compile(r'`(.+?)`'), r'\1'),
+        (re.compile(r'\[(.+?)\]\(.+?\)'), r'\1'),
+    ]
+    for _ in range(4):
+        prev = text
+        for pat, repl in inline_patterns:
+            text = pat.sub(repl, text)
+        if text == prev:
+            break
     return text.strip()
 
 
@@ -929,6 +982,21 @@ Printed in the United States of America
     # CONTENT RENDERING
     # ========================================================================
 
+    def scene_break(self):
+        """Render a markdown horizontal rule (`---`/`***`/`___`) as a short
+        centered hairline. Pure vector — no text characters that could be
+        confused for leftover markdown asterisks. Use for novel scene
+        breaks; non-fiction can opt out by leaving HRs out of the source."""
+        d = DESIGN_COLORS
+        self.ln(0.12)
+        rule_width = 1.2  # inches
+        cx = self.w / 2
+        y = self.get_y() + 0.05
+        self.set_draw_color(*d.get("gold_border", (180, 180, 180)))
+        self.set_line_width(0.012)
+        self.line(cx - rule_width / 2, y, cx + rule_width / 2, y)
+        self.ln(0.24)
+
     def body_text(self, text):
         """Generate body paragraph with pull quote detection."""
         d = DESIGN_COLORS
@@ -1225,6 +1293,9 @@ Printed in the United States of America
 
 def generate_content(pdf, content, toc_items):
     """Parse markdown and generate PDF content."""
+    # Strip HTML comment blocks (research-source footers, draft notes)
+    # before parsing so they never leak into rendered output.
+    content = strip_html_comments(content)
     lines = content.split('\n')
 
     # Skip front matter
@@ -1243,8 +1314,18 @@ def generate_content(pdf, content, toc_items):
     while i < len(lines):
         line = lines[i].strip()
 
-        # Skip dividers and LaTeX
-        if line in ['---', '***', '___'] or line.startswith('\\'):
+        # Markdown horizontal rule → scene-break divider. Match three or
+        # more -, *, or _ on a line by themselves (with optional spaces).
+        if re.fullmatch(r'(\*\s*){3,}|(-\s*){3,}|(_\s*){3,}', line):
+            if blockquote_text:
+                pdf.blockquote(' '.join(blockquote_text))
+                blockquote_text = []
+            pdf.scene_break()
+            i += 1
+            continue
+
+        # Skip stray LaTeX-only lines (legacy guard)
+        if line.startswith('\\'):
             i += 1
             continue
 

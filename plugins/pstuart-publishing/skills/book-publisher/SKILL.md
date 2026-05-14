@@ -245,6 +245,33 @@ Accurate TOC page numbers via two rendering passes:
 - Centered page numbers in footer
 - Unicode font support via system TTF fonts
 
+### Typography Toggles (`TYPOGRAPHY` dict)
+Top of `generate_pdf.py`. Defaults match novel/literary use; toggle for
+workbook or technical books.
+
+| Key | Default | Effect |
+|-----|---------|--------|
+| `preserve_unicode` | `True` | Keep em/en dashes, curly quotes, ellipses, bullets as actual glyphs (requires the TTF font load, which the template does). Set `False` to fall back to legacy cp1252 ASCII collapse for core-font workflows. |
+| `smart_quotes` | `True` | Convert straight ASCII `"` and `'` to typographic curly quotes via a Smartypants-style algorithm. Honors existing curly quotes. |
+| `double_hyphen_to_em` | `False` | Convert `--` in source to em-dash. Leave off for technical books where `--` is meaningful (CLI flags). |
+
+### Markdown Hardening
+Built into `sanitize_text` / `strip_markdown` / `generate_content`:
+- **HTML comments stripped** at content read (`strip_html_comments`) — research-source footers (`<!-- ... -->`) never leak into rendered output.
+- **Iterative inline-emphasis stripping** — handles nested cases like `**bold *italic*** ` that single-pass regexes miss.
+- **Scene breaks render as a vector hairline** — markdown HRs (`---`, `***`, `___`) call `pdf.scene_break()`, drawing a short centered rule. No text characters used, so they can never be confused for leftover markdown.
+- **All heading levels parsed** — `#` through `####` route to chapter / section / subsection / minor headings respectively.
+
+### Em-Dash Awareness
+Heavy em-dash usage is a recognizable AI-prose tell. The pipeline does not
+auto-rewrite em-dashes (that's an authorial decision), but a copy pass is
+recommended before final render. Quick audit:
+```bash
+grep -rco '—' manuscript/ | sort -t: -k2 -n -r | head
+```
+Aim for fewer than ~1 per page on average for literary fiction. Replace
+some with commas, parentheses, or sentence breaks where the rhythm allows.
+
 ### Interior Styling Elements
 - **Pull Quotes**: Gold-bordered highlight boxes for key statements
 - **Key Insight Boxes**: Navy header bar with gray content area

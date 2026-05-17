@@ -9,6 +9,14 @@ import subprocess
 
 ZGEN_BIN_DEFAULT = "/Users/pstuart/bin/zgen"
 
+# Recommended negative-prompt for book covers — steers the model away from
+# the hallucinated text that diffusion models often bake into "painterly" art.
+DEFAULT_NEGATIVE_PROMPT = (
+    "text, letters, words, writing, calligraphy, script, symbols, runes, "
+    "characters, gibberish text, letterforms, alphabet, handwriting, signature, "
+    "lorem ipsum"
+)
+
 
 class ZgenNotFoundError(RuntimeError):
     """zgen binary missing from PATH."""
@@ -32,8 +40,14 @@ def run_zgen(
     seed: int,
     steps: int | None = None,
     bin_path: str = ZGEN_BIN_DEFAULT,
+    negative_prompt: str | None = None,
 ) -> Path:
     """Invoke zgen once to produce exactly one image at `output`.
+
+    negative_prompt: optional guidance to steer the model AWAY from specific
+    content. Passed to zgen as --negative-prompt, which zgen forwards to
+    draw-things-cli. For book-cover art, consider using DEFAULT_NEGATIVE_PROMPT
+    to suppress hallucinated text.
 
     Raises ZgenNotFoundError or ZgenFailureError on any problem.
     """
@@ -59,6 +73,10 @@ def run_zgen(
     ]
     if steps is not None:
         cmd.extend(["-S", str(steps)])
+    if negative_prompt is not None:
+        # Must come BEFORE the positional prompt so zgen's arg parser treats
+        # it as a flag rather than a second positional arg.
+        cmd.extend(["--negative-prompt", negative_prompt])
     cmd.append(prompt)
 
     result = subprocess.run(cmd, capture_output=True, text=True)

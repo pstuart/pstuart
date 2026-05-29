@@ -21,6 +21,7 @@ from fpdf import FPDF
 from fpdf.enums import MethodReturnValue
 
 from bookpub.fonts import register_mono, register_serif
+from bookpub.index import compress_ranges, find_term_pages
 from bookpub.text import sanitize_text, strip_markdown
 
 SERIF = "serif"
@@ -346,6 +347,42 @@ class BookPDF(FPDF):
             _draw_row(row, i)
         self.ln(0.1)
 
+    # -- back-of-book index (clickable, same-document) -----------------------
+    def index_pages(self, index_map: dict[str, list[int]]):
+        """Render alphabetised index pages. Each page reference is a real link
+        (``write(link=)`` -> ``/Link`` annotation) into the body, and inherits
+        the embedded serif — so no dead text and no '--' artifacts."""
+        if not index_map:
+            return
+        self.add_page()
+        self.start_section("Index", level=0, strict=False)
+        self.set_font(SERIF, "B", 18)
+        self.set_text_color(*self.palette["heading"])
+        self.cell(0, 0.5, "Index", new_x="LMARGIN", new_y="NEXT")
+        self.ln(0.1)
+        last_letter = None
+        for term in sorted(index_map, key=str.lower):
+            letter = term[0].upper()
+            if letter != last_letter:
+                last_letter = letter
+                self.ln(0.08)
+                self.set_font(SERIF, "B", 12)
+                self.set_text_color(*self.palette["accent"])
+                self.cell(0, 0.28, letter, new_x="LMARGIN", new_y="NEXT")
+            self.set_x(self.l_margin + 0.15)
+            self.set_font(SERIF, "", 10.5)
+            self.set_text_color(*self.palette["body"])
+            self.write(0.2, sanitize_text(term) + "  ")
+            runs = compress_ranges(index_map[term])
+            for k, (a, b) in enumerate(runs):
+                lid = self.add_link(page=a)
+                self.set_text_color(*self.palette["heading"])
+                self.write(0.2, str(a) if a == b else f"{a}-{b}", lid)
+                self.set_text_color(*self.palette["body"])
+                if k < len(runs) - 1:
+                    self.write(0.2, ", ")
+            self.ln(0.26)
+
 
 # --------------------------------------------------------------------------- #
 # Block splitting + manuscript parsing
@@ -438,19 +475,36 @@ def parse_manuscript(md: str) -> list[dict]:
     return elements
 
 
-def build_pdf(config: dict, elements: list[dict], output: str | Path) -> dict:
-    """Render a book to ``output``. Returns stats (pages, chapters, parts)."""
+def _count_sections(body: str) -> int:
+    return sum(1 for ln in body.splitlines() if ln.startswith("## "))
+
+
+def _render(config: dict, elements: list[dict], output: str | Path,
+            index_map: dict[str, list[int]] | None = None) -> dict:
+    import math
+
+    from pypdf import PdfReader
+
     pdf = BookPDF(config)
     pdf.title_page()
     pdf.copyright_page()
     pdf.dedication_page()
 
-    pdf.insert_toc_placeholder(pdf._render_toc, pages=2, allow_extra_pages=True)
-    pdf.in_front_matter = False
-
     has_parts = any(e["kind"] == "part" for e in elements)
     chapter_level = 1 if has_parts else 0
+
+    # Reserve enough TOC pages up front that it never overflows: an overflow
+    # would let allow_extra_pages insert pages that shift the body and invalidate
+    # the outline destinations recorded during the body pass.
+    n_entries = len(elements) + sum(
+        _count_sections(e.get("body", "")) for e in elements if e["kind"] == "chapter"
+    )
+    toc_pages = max(1, math.ceil((n_entries + 3) / 24))
+    pdf.insert_toc_placeholder(pdf._render_toc, pages=toc_pages, allow_extra_pages=True)
+    pdf.in_front_matter = False
+
     n_chapters = n_parts = 0
+    first_body_page = None
     for el in elements:
         if el["kind"] == "part":
             pdf.part_divider(el); n_parts += 1
@@ -458,9 +512,40 @@ def build_pdf(config: dict, elements: list[dict], output: str | Path) -> dict:
             pdf.chapter_open(el, level=chapter_level)
             pdf.render_body(el.get("body", ""), section_level=chapter_level + 1)
             n_chapters += 1
+        if first_body_page is None:
+            first_body_page = pdf.page_no()
+
+    if index_map:
+        pdf.index_pages(index_map)
 
     out = Path(output)
     out.parent.mkdir(parents=True, exist_ok=True)
     pdf.output(str(out))
-    return {"pages": pdf.page_no(), "chapters": n_chapters, "parts": n_parts,
+    # Authoritative page count: read the finished file (page_no() can disagree
+    # after the TOC placeholder is reconciled at output time).
+    pages = len(PdfReader(str(out)).pages)
+    return {"pages": pages, "chapters": n_chapters, "parts": n_parts,
+            "index_terms": len(index_map or {}), "first_body_page": first_body_page or 1,
             "output": str(out)}
+
+
+def build_pdf(config: dict, elements: list[dict], output: str | Path, *,
+              index_terms: list[str] | None = None) -> dict:
+    """Render a book to ``output``. Returns stats (pages, chapters, parts).
+
+    If ``index_terms`` is given, render the body once to learn each term's body
+    pages (word-boundary matched), then re-render with a clickable index appended
+    — body pagination is identical between passes, so the page references resolve.
+    """
+    if index_terms:
+        import tempfile
+
+        from pypdf import PdfReader
+
+        tmp = Path(tempfile.mkdtemp()) / "_bodyonly.pdf"
+        body_stats = _render(config, elements, tmp, index_map=None)
+        pages_text = [(pg.extract_text() or "") for pg in PdfReader(str(tmp)).pages]
+        index_map = find_term_pages(pages_text, index_terms,
+                                    start_page=body_stats["first_body_page"])
+        return _render(config, elements, output, index_map=index_map)
+    return _render(config, elements, output, index_map=None)

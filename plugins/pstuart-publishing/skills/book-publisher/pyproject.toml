@@ -1,0 +1,33 @@
+[build-system]
+requires = ["setuptools>=68"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "bookpub"
+version = "0.1.0"
+description = "Shared book-publishing engine: portable PDF/EPUB/cover generation and a fail-loud QA gate for KDP and multi-platform distribution."
+readme = "SKILL.md"
+requires-python = ">=3.11"
+license = { text = "MIT" }
+authors = [{ name = "Patrick Stuart", email = "patrick.stuart@gmail.com" }]
+keywords = ["publishing", "book", "pdf", "epub", "kdp", "kindle", "ingramspark", "covers"]
+dependencies = [
+    "fpdf2>=2.8.5",
+    "pypdf>=6.0",
+    "EbookLib>=0.18",
+    "Pillow>=10",
+    "python-barcode>=0.15",
+]
+
+[project.optional-dependencies]
+test = ["pytest>=8"]
+
+[project.scripts]
+bookpub-qa = "bookpub.qa_report:main"
+
+# Package ONLY the new engine. templates/ and tests/ keep their current
+# in-place import behaviour (pytest.ini remains the authoritative test config —
+# we deliberately do NOT add [tool.pytest.ini_options] here so the existing
+# dual-path cover-lib imports (`from lib.*` and `from templates.lib.*`) keep working).
+[tool.setuptools]
+packages = ["bookpub"]

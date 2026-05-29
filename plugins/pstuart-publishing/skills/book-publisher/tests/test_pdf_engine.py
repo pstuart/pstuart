@@ -34,6 +34,15 @@ Body text for chapter two.
 ```
 code stays verbatim --flag
 ```
+
+A table with a long cell the legacy renderer would truncate:
+
+| Account | Balance | Notes |
+|---------|---------|-------|
+| Emergency fund reserve account | $2,200 | three months of expenses set aside |
+| Checking | $850 | daily spending |
+
+**Key Takeaway:** Always keep a buffer.
 """
 
 CONFIG = {
@@ -84,6 +93,17 @@ def test_pdf_has_bookmark_outline(tmp_path):
     n = _count_outline(reader.outline)
     # part + 2 chapters + sections all register in the outline
     assert n >= 3, f"expected bookmark outline entries, found {n}"
+
+
+def test_table_content_survives_untruncated(tmp_path):
+    # The legacy renderer truncated cells to [:30] and dropped rows; the measured
+    # renderer must keep the full text of every row.
+    _, reader = _build(tmp_path)
+    raw = "".join(pg.extract_text() or "" for pg in reader.pages)
+    text = " ".join(raw.split())  # normalise wrap newlines; content wraps, not truncates
+    assert "$2,200" in text                      # row not dropped
+    assert "expenses set aside" in text          # long cell wrapped, not truncated at 30
+    assert "$850" in text
 
 
 def test_pdf_links_point_to_real_pages(tmp_path):

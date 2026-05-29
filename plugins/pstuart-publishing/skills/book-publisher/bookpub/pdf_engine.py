@@ -1,22 +1,16 @@
 """bookpub.pdf_engine — config-driven interior PDF generation.
 
-Phase 2a skeleton. The headline capabilities the forked engines never had:
+Phase 2a gave the headline navigation: clickable TOC (real ``/Link`` annotations
+via ``add_link(page=)`` + ``cell(link=)``), a bookmark ``/Outlines`` tree (via
+``start_section``), and a robust native two-pass TOC
+(``insert_toc_placeholder(allow_extra_pages=True)``). Text + fonts come from
+:mod:`bookpub.text` / :mod:`bookpub.fonts`, so output is single-embedded-font
+with real em-dashes by construction.
 
-  * **Clickable TOC** — entries are real PDF link annotations (``add_link(page=)``
-    + ``cell(link=)``) that jump to the chapter.
-  * **Bookmark outline** — ``start_section()`` populates the PDF ``/Outlines``
-    tree (the reader sidebar). Headings are rendered by this module; sections are
-    registered with ``strict=False`` purely for the outline/destinations.
-  * **Robust two-pass TOC** — ``insert_toc_placeholder(allow_extra_pages=True)``
-    reserves the TOC pages, renders the body, then fills the TOC with FINAL page
-    numbers. No hand-rolled page map, no drift.
-
-Text + fonts come from :mod:`bookpub.text` and :mod:`bookpub.fonts`, so the
-``--`` artifact and macOS-font problems are fixed here by construction.
-
-Phase 2b adds measured tables, fenced-code (mono), callouts, and reconciles the
-legacy ``DESIGN_COLORS`` key set. This module deliberately uses its own small
-palette rather than the broken one, so it never raises ``KeyError``.
+Phase 2b adds: style-preset palettes, fenced code in the bundled monospace on a
+tinted background, MEASURED tables (wrapped cells, header repeated on page
+break, no ``[:30]`` truncation), and key-takeaway callouts. The legacy
+``DESIGN_COLORS`` ``KeyError`` is moot here — this engine uses its own palette.
 """
 from __future__ import annotations
 
@@ -24,20 +18,33 @@ import re
 from pathlib import Path
 
 from fpdf import FPDF
+from fpdf.enums import MethodReturnValue
 
-from bookpub.fonts import register_serif
+from bookpub.fonts import register_mono, register_serif
 from bookpub.text import sanitize_text, strip_markdown
 
 SERIF = "serif"
+MONO = "mono"
 
-# Minimal, safe palette. Phase 2b wires the full style-preset system; for now a
-# config may override any of these via config["palette"][key] = (r, g, b).
-_DEFAULT_PALETTE = {
-    "heading": (30, 58, 95),    # navy
-    "accent": (201, 162, 39),   # gold
-    "body": (40, 40, 40),       # near-black
-    "muted": (110, 110, 110),   # eyebrow / folio
-    "rule": (200, 200, 200),    # light rule
+# Common interior colours; presets override heading + accent.
+_BASE_PALETTE = {
+    "body": (40, 40, 40),
+    "muted": (110, 110, 110),
+    "rule": (200, 200, 200),
+    "zebra": (244, 244, 246),
+    "code_bg": (244, 244, 246),
+}
+
+# The 8 SKILL.md schemes, reduced to interior heading/accent pairs.
+STYLE_PRESETS = {
+    "navy_gold": {"heading": (30, 58, 95), "accent": (201, 162, 39)},
+    "burgundy_cream": {"heading": (88, 24, 32), "accent": (160, 120, 60)},
+    "teal_coral": {"heading": (0, 95, 115), "accent": (255, 127, 102)},
+    "black_silver": {"heading": (25, 25, 25), "accent": (120, 120, 120)},
+    "earth_warm": {"heading": (89, 60, 31), "accent": (218, 165, 32)},
+    "purple_gold": {"heading": (60, 25, 85), "accent": (218, 165, 32)},
+    "forest_cream": {"heading": (34, 85, 51), "accent": (160, 140, 70)},
+    "minimal_white": {"heading": (30, 30, 30), "accent": (90, 90, 90)},
 }
 
 _ROMAN = ["", "I", "II", "III", "IV", "V", "VI", "VII", "VIII", "IX", "X",
@@ -54,9 +61,12 @@ class BookPDF(FPDF):
         m = config.get("margins", {})
         self.set_margins(m.get("h", 0.625), m.get("top", 0.6), m.get("h", 0.625))
         self.set_auto_page_break(auto=True, margin=m.get("bottom", 0.6))
-        self.palette = {**_DEFAULT_PALETTE, **config.get("palette", {})}
+        preset = STYLE_PRESETS.get(config.get("style_preset", "navy_gold"),
+                                   STYLE_PRESETS["navy_gold"])
+        self.palette = {**_BASE_PALETTE, **preset, **config.get("palette", {})}
         self.in_front_matter = True
         register_serif(self)
+        register_mono(self)
         self.set_font(SERIF, "", 11)
 
     # -- chrome --------------------------------------------------------------
@@ -132,9 +142,7 @@ class BookPDF(FPDF):
             pdf.set_text_color(*pdf.palette["heading" if is_part else "body"])
             page_w = pdf.get_string_width(num) + 0.05
             name_w = pdf.epw - indent - page_w
-            x0 = pdf.l_margin + indent
-            pdf.set_x(x0)
-            # truncate by real width, not character count
+            pdf.set_x(pdf.l_margin + indent)
             while pdf.get_string_width(name) > name_w - 0.1 and len(name) > 4:
                 name = name[:-2]
             pdf.cell(name_w, 0.28, name, link=link, new_x="RIGHT", new_y="TOP")
@@ -168,7 +176,6 @@ class BookPDF(FPDF):
             self.ln(0.05)
         self._text(0, 0.5, title, style="B", size=22, color="heading",
                    align="C", strip=True)
-        # decorative rule
         self.set_draw_color(*self.palette["accent"])
         self.set_line_width(0.01)
         cx = self.w / 2
@@ -183,12 +190,17 @@ class BookPDF(FPDF):
                 self._heading(first[3:].strip(), level=section_level, size=14)
             elif first.startswith("### "):
                 self._heading(first[4:].strip(), level=None, size=12)
-            elif first.startswith("```") or first.startswith("~~~"):
+            elif first.startswith(("```", "~~~")):
                 self._code_block(block)
-            elif first.lstrip().startswith((">",)):
+            elif _is_table(block):
+                self.render_table(_parse_table(block))
+            elif first.lstrip().startswith(">"):
                 self._blockquote(block)
             elif _is_list(first):
                 self._list(block)
+            elif _CALLOUT_RE.match(first):
+                m = _CALLOUT_RE.match(" ".join(block))
+                self._key_callout(m.group(1), m.group(2))
             else:
                 self._paragraph(" ".join(block))
 
@@ -196,7 +208,7 @@ class BookPDF(FPDF):
         if self.get_y() > self.h - self.b_margin - 1.0:
             self.add_page()
         self.ln(0.12)
-        if level is not None:  # register H2 sections in the outline
+        if level is not None:
             self.start_section(strip_markdown(text), level=level, strict=False)
         self._text(0, 0.32, text, style="B", size=size, color="heading",
                    align="L", strip=True)
@@ -234,32 +246,122 @@ class BookPDF(FPDF):
                             align="L", new_x="LMARGIN", new_y="NEXT")
         self.ln(0.06)
 
+    def _key_callout(self, label: str, text: str):
+        """A gold-bordered key-takeaway box, sized to its measured content."""
+        self.set_font(SERIF, "", 10.5)
+        pad = 0.1
+        lines = self.multi_cell(self.epw - 2 * pad, 0.2, sanitize_text(text),
+                                dry_run=True, output=MethodReturnValue.LINES)
+        h = (len(lines) + 1) * 0.2 + 2 * pad
+        if self.get_y() + h > self.h - self.b_margin:
+            self.add_page()
+        x0, y0 = self.l_margin, self.get_y()
+        self.set_fill_color(*self.palette["zebra"])
+        self.set_draw_color(*self.palette["accent"])
+        self.set_line_width(0.015)
+        self.rect(x0, y0, self.epw, h, "FD")
+        self.set_xy(x0 + pad, y0 + pad)
+        self.set_font(SERIF, "B", 10.5)
+        self.set_text_color(*self.palette["heading"])
+        self.cell(0, 0.2, sanitize_text(label), new_x="LMARGIN", new_y="NEXT")
+        self.set_x(x0 + pad)
+        self.set_font(SERIF, "", 10.5)
+        self.set_text_color(*self.palette["body"])
+        self.multi_cell(self.epw - 2 * pad, 0.2, sanitize_text(text),
+                        align="L", new_x="LMARGIN", new_y="NEXT")
+        self.set_y(y0 + h)
+        self.ln(0.1)
+
     def _code_block(self, block: list[str]):
-        # Phase 2a: render verbatim in serif (no markdown transforms). Phase 2b
-        # ships a bundled monospace font and a tinted code background.
-        code = [ln for ln in block if not (ln.startswith("```") or ln.startswith("~~~"))]
-        self.set_font(SERIF, "", 9.5)
-        self.set_text_color(*self.palette["muted"])
-        for ln in code:
-            self.set_x(self.l_margin + 0.15)
-            self.multi_cell(self.epw - 0.15, 0.18, ln, align="L",
-                            new_x="LMARGIN", new_y="NEXT")
+        code = [ln for ln in block if not ln.startswith(("```", "~~~"))]
+        if not code:
+            return
+        self.set_font(MONO, "", 8.5)
+        line_h, pad = 0.16, 0.08
+        h = len(code) * line_h + 2 * pad
+        if self.get_y() + h > self.h - self.b_margin:
+            self.add_page()
+        x0, y0 = self.l_margin, self.get_y()
+        self.set_fill_color(*self.palette["code_bg"])
+        self.rect(x0, y0, self.epw, h, "F")
+        self.set_text_color(*self.palette["body"])
+        self.set_xy(x0 + pad, y0 + pad)
+        for ln in code:  # verbatim: no markdown/sanitize, so '--' survives
+            self.set_x(x0 + pad)
+            self.cell(self.epw - 2 * pad, line_h, ln, new_x="LMARGIN", new_y="NEXT")
+        self.set_y(y0 + h)
         self.ln(0.08)
+
+    # -- measured table ------------------------------------------------------
+    def render_table(self, rows: list[list[str]]):
+        if not rows:
+            return
+        ncols = max(len(r) for r in rows)
+        rows = [list(r) + [""] * (ncols - len(r)) for r in rows]
+        col_w = self.epw / ncols
+        pad, line_h = 0.04, 0.17
+        header = rows[0]
+
+        def _row_height(row, style):
+            self.set_font(SERIF, style, 9)
+            n = 1
+            for cell in row:
+                lines = self.multi_cell(col_w - 2 * pad, line_h,
+                                        strip_markdown(cell.strip()),
+                                        dry_run=True, output=MethodReturnValue.LINES)
+                n = max(n, len(lines))
+            return n * line_h + 2 * pad
+
+        def _draw_row(row, idx):
+            style = "B" if idx == 0 else ""
+            h = _row_height(row, style)
+            if self.get_y() + h > self.h - self.b_margin:
+                self.add_page()
+                if idx != 0:  # repeat the header on continuation pages
+                    _draw_row(header, 0)
+            y, x0 = self.get_y(), self.l_margin
+            if idx == 0:
+                self.set_fill_color(*self.palette["heading"])
+                self.set_text_color(255, 255, 255)
+                fill = True
+            else:
+                fill = idx % 2 == 0
+                if fill:
+                    self.set_fill_color(*self.palette["zebra"])
+                self.set_text_color(*self.palette["body"])
+            self.set_draw_color(*self.palette["rule"])
+            self.set_line_width(0.008)
+            self.set_font(SERIF, style, 9)
+            for c in range(ncols):
+                self.rect(x0 + c * col_w, y, col_w, h, "FD" if fill else "D")
+            for c in range(ncols):
+                self.set_xy(x0 + c * col_w + pad, y + pad)
+                self.multi_cell(col_w - 2 * pad, line_h,
+                                strip_markdown(row[c].strip()),
+                                align="L", new_x="RIGHT", new_y="TOP")
+            self.set_xy(x0, y + h)
+
+        self.ln(0.08)
+        for i, row in enumerate(rows):
+            _draw_row(row, i)
+        self.ln(0.1)
 
 
 # --------------------------------------------------------------------------- #
 # Block splitting + manuscript parsing
 # --------------------------------------------------------------------------- #
 
+_CALLOUT_RE = re.compile(r"^\*\*([^*]+?):\*\*\s*(.+)$", re.DOTALL)
+
+
 def _split_blocks(body: str) -> list[list[str]]:
-    """Split body markdown into blocks (paragraphs/lists/quotes/code fences)."""
+    """Split body markdown into blocks. Table rows and code fences stay grouped."""
     blocks: list[list[str]] = []
     cur: list[str] = []
     in_code = False
     for raw in body.splitlines():
         line = raw.rstrip()
-        fence = line.startswith("```") or line.startswith("~~~")
-        if fence:
+        if line.startswith(("```", "~~~")):
             if not in_code:
                 if cur:
                     blocks.append(cur); cur = []
@@ -276,7 +378,6 @@ def _split_blocks(body: str) -> list[list[str]]:
             if cur:
                 blocks.append(cur); cur = []
             continue
-        # headings and list-item boundaries start their own block
         if (line.startswith(("## ", "### ")) or _is_list(line)) and cur and not _is_list(cur[0]):
             blocks.append(cur); cur = []
         cur.append(line)
@@ -289,38 +390,42 @@ def _is_list(line: str) -> bool:
     return bool(re.match(r"^\s*(?:[-*+]|\d+\.)\s+", line))
 
 
+def _is_table(block: list[str]) -> bool:
+    if len(block) < 2 or "|" not in block[0]:
+        return False
+    return any(set(ln.strip()) <= set("|-: ") and "-" in ln for ln in block)
+
+
+def _parse_table(block: list[str]) -> list[list[str]]:
+    rows = []
+    for ln in block:
+        if set(ln.strip()) <= set("|-: ") and "-" in ln:  # separator row
+            continue
+        rows.append([c.strip() for c in ln.strip().strip("|").split("|")])
+    return rows
+
+
 _PART_RE = re.compile(r"^\s*part\b", re.IGNORECASE)
 
 
 def parse_manuscript(md: str) -> list[dict]:
-    """Minimal parser for the project's `# CHAPTER` / `# PART` convention.
-
-    Splits on H1. A heading matching /^part/i becomes a part divider; otherwise
-    a chapter. If the first body line is an H2, it is used as the chapter title
-    (the `# CHAPTER 1` / `## Real Title` convention).
-    """
+    """Minimal parser for the project's `# CHAPTER` / `# PART` convention."""
     elements: list[dict] = []
     chunks = re.split(r"(?m)^# (.+)$", md)
-    # chunks: [pre, h1, body, h1, body, ...]
-    ch_num = 0
-    part_num = 0
+    ch_num = part_num = 0
     for i in range(1, len(chunks), 2):
         h1 = chunks[i].strip()
         body = chunks[i + 1] if i + 1 < len(chunks) else ""
         if _PART_RE.match(h1):
             part_num += 1
-            sub = None
             m = re.search(r"(?m)^\*(.+?)\*\s*$", body)
-            if m:
-                sub = m.group(1)
             elements.append({"kind": "part", "number": part_num,
                              "title": re.sub(r"^[Pp]art\s+[^:]*:\s*", "", h1) or h1,
-                             "subtitle": sub})
+                             "subtitle": m.group(1) if m else None})
         else:
             ch_num += 1
             title = h1
             body_lines = body.splitlines()
-            # consume a leading H2 as the real chapter title
             for j, ln in enumerate(body_lines):
                 if ln.strip() == "":
                     continue
@@ -340,7 +445,6 @@ def build_pdf(config: dict, elements: list[dict], output: str | Path) -> dict:
     pdf.copyright_page()
     pdf.dedication_page()
 
-    # Reserve the TOC right after front matter; filled with final page numbers.
     pdf.insert_toc_placeholder(pdf._render_toc, pages=2, allow_extra_pages=True)
     pdf.in_front_matter = False
 

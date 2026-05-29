@@ -33,12 +33,18 @@ def test_register_serif_fails_loud_when_font_missing(tmp_path):
         register_serif(pdf, font_dir_override=tmp_path)  # empty dir
 
 
-def test_register_mono_fails_loud_until_shipped():
-    # The mono TTF ships in Phase 2; until then this must fail loudly rather
-    # than silently emit a non-embedded core Courier.
+def test_register_mono_registers_family():
+    # The bundled JetBrains Mono ships in Phase 2b.
+    pdf = FPDF()
+    fam = register_mono(pdf)
+    assert fam == MONO_FAMILY
+    assert MONO_FAMILY in pdf.fonts
+
+
+def test_register_mono_fails_loud_when_missing(tmp_path):
     pdf = FPDF()
     with pytest.raises(FontError):
-        register_mono(pdf)
+        register_mono(pdf, font_dir_override=tmp_path)  # empty dir
 
 
 def test_register_fonts_serif_only_by_default():
@@ -46,3 +52,10 @@ def test_register_fonts_serif_only_by_default():
     fams = register_fonts(pdf)
     assert fams == {"serif": SERIF_FAMILY}
     assert MONO_FAMILY not in pdf.fonts
+
+
+def test_register_fonts_with_mono():
+    pdf = FPDF()
+    fams = register_fonts(pdf, mono=True)
+    assert fams == {"serif": SERIF_FAMILY, "mono": MONO_FAMILY}
+    assert MONO_FAMILY in pdf.fonts

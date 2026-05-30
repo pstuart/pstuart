@@ -66,14 +66,19 @@ class BookPDF(FPDF):
                                    STYLE_PRESETS["navy_gold"])
         self.palette = {**_BASE_PALETTE, **preset, **config.get("palette", {})}
         self.in_front_matter = True
+        self._in_toc = False  # set while the TOC renders (folio suppressed)
+        self._toc_page_range: tuple[int, int] | None = None  # physical TOC pages (no folio)
+        self.toc_entries: list[tuple[str, int, int]] = []  # (title, level, page) collected at render
         register_serif(self)
         register_mono(self)
         self.set_font(SERIF, "", 11)
 
     # -- chrome --------------------------------------------------------------
     def footer(self):
-        if self.in_front_matter:
-            return  # no folio on title/copyright/dedication/TOC
+        if self.in_front_matter or self._in_toc:
+            return  # no folio on title/copyright/dedication, or while the TOC renders
+        if self._toc_page_range and self._toc_page_range[0] <= self.page_no() <= self._toc_page_range[1]:
+            return  # the last TOC page's footer fires after _in_toc resets — catch it here
         self.set_y(-0.5)
         self.set_font(SERIF, "", 9)
         self.set_text_color(*self.palette["muted"])
@@ -125,6 +130,7 @@ class BookPDF(FPDF):
 
     # -- table of contents (rendered last, with final page numbers) ----------
     def _render_toc(self, pdf: "BookPDF", outline):
+        pdf._in_toc = True  # suppress body-folio footers on the TOC pages
         pdf.set_font(SERIF, "B", 20)
         pdf.set_text_color(*pdf.palette["heading"])
         pdf.cell(0, 0.6, "Contents", new_x="LMARGIN", new_y="NEXT")
@@ -144,8 +150,10 @@ class BookPDF(FPDF):
             page_w = pdf.get_string_width(num) + 0.05
             name_w = pdf.epw - indent - page_w
             pdf.set_x(pdf.l_margin + indent)
-            while pdf.get_string_width(name) > name_w - 0.1 and len(name) > 4:
-                name = name[:-2]
+            if pdf.get_string_width(name) > name_w - 0.1:
+                while pdf.get_string_width(name + "…") > name_w - 0.1 and len(name) > 4:
+                    name = name[:-1]
+                name = name.rstrip() + "…"
             pdf.cell(name_w, 0.28, name, link=link, new_x="RIGHT", new_y="TOP")
             pdf.cell(page_w, 0.28, num, align="R", link=link,
                      new_x="LMARGIN", new_y="NEXT")
@@ -154,6 +162,7 @@ class BookPDF(FPDF):
     def part_divider(self, el: dict):
         self.add_page()
         self.start_section(strip_markdown(el["title"]), level=0, strict=False)
+        self.toc_entries.append((strip_markdown(el["title"]), 0, self.page_no()))
         self.ln(2.5)
         if el.get("number"):
             self._text(0, 0.3, f"PART {_ROMAN[el['number']]}", size=12,
@@ -170,6 +179,7 @@ class BookPDF(FPDF):
         self.add_page()
         title = el.get("title") or f"Chapter {el.get('number', '')}".strip()
         self.start_section(strip_markdown(title), level=level, strict=False)
+        self.toc_entries.append((strip_markdown(title), level, self.page_no()))
         self.ln(0.8)
         if el.get("number"):
             self._text(0, 0.3, f"CHAPTER {el['number']}", size=11,
@@ -213,6 +223,7 @@ class BookPDF(FPDF):
         self.ln(0.12)
         if level is not None:
             self.start_section(strip_markdown(text), level=level, strict=False)
+            self.toc_entries.append((strip_markdown(text), level, self.page_no()))
         self._text(0, 0.32, text, style="B", size=size, color="heading",
                    align="L", strip=True)
         self.ln(0.04)
@@ -529,10 +540,47 @@ def _count_sections(body: str) -> int:
     return sum(1 for ln in body.splitlines() if ln.startswith("## "))
 
 
-def _render(config: dict, elements: list[dict], output: str | Path,
-            index_map: dict[str, list[int]] | None = None) -> dict:
-    import math
+class _TocEntry:
+    """Minimal stand-in for fpdf2's OutlineSection (name/level/page_number) used to
+    pre-measure the TOC's exact page span."""
+    __slots__ = ("name", "level", "page_number")
 
+    def __init__(self, name, level, page_number):
+        self.name, self.level, self.page_number = name, level, page_number
+
+
+def _toc_entries(elements: list[dict], chapter_level: int) -> list[tuple[str, int]]:
+    """The (title, level) rows the TOC will show — parts, chapters, and ## sections.
+    Mirrors exactly what start_section records during the body render."""
+    rows: list[tuple[str, int]] = []
+    for el in elements:
+        if el["kind"] == "part":
+            rows.append((el["title"], 0))
+        else:
+            rows.append((el.get("title") or f"Chapter {el.get('number', '')}".strip(),
+                         chapter_level))
+            for ln in el.get("body", "").splitlines():
+                if ln.startswith("## "):
+                    rows.append((ln[3:].strip(), chapter_level + 1))
+    return rows
+
+
+def _count_toc_pages(config: dict, entries: list[tuple[str, int]]) -> int:
+    """Exact number of pages the TOC will occupy — render it to a throwaway PDF.
+    (Page-number digit width doesn't affect line wrapping, so this is stable.)"""
+    scratch = BookPDF(config)
+    scratch.in_front_matter = False
+    scratch.add_page()
+    scratch._render_toc(scratch, [_TocEntry(t, lvl, 100) for t, lvl in entries])
+    return scratch.page_no()
+
+
+def _build(config: dict, elements: list[dict], output: str | Path, *,
+           toc_final: list[tuple[str, int, int]] | None = None,
+           index_map: dict[str, list[int]] | None = None) -> dict:
+    """Render one pass. With ``toc_final`` (title, level, FINAL page), the TOC is
+    rendered explicitly between the front matter and the body — no placeholder, so
+    no reserved-page blanks and no body drift."""
     from pypdf import PdfReader
 
     pdf = BookPDF(config)
@@ -543,14 +591,13 @@ def _render(config: dict, elements: list[dict], output: str | Path,
     has_parts = any(e["kind"] == "part" for e in elements)
     chapter_level = 1 if has_parts else 0
 
-    # Reserve enough TOC pages up front that it never overflows: an overflow
-    # would let allow_extra_pages insert pages that shift the body and invalidate
-    # the outline destinations recorded during the body pass.
-    n_entries = len(elements) + sum(
-        _count_sections(e.get("body", "")) for e in elements if e["kind"] == "chapter"
-    )
-    toc_pages = max(1, math.ceil((n_entries + 3) / 24))
-    pdf.insert_toc_placeholder(pdf._render_toc, pages=toc_pages, allow_extra_pages=True)
+    if toc_final is not None:
+        pdf._in_toc = True
+        pdf.add_page()  # TOC on a fresh page
+        toc_start = pdf.page_no()
+        pdf._render_toc(pdf, [_TocEntry(t, lvl, pg) for t, lvl, pg in toc_final])
+        pdf._toc_page_range = (toc_start, pdf.page_no())  # suppress folio on all TOC pages
+        pdf._in_toc = False
     pdf.in_front_matter = False
 
     n_chapters = n_parts = 0
@@ -571,31 +618,38 @@ def _render(config: dict, elements: list[dict], output: str | Path,
     out = Path(output)
     out.parent.mkdir(parents=True, exist_ok=True)
     pdf.output(str(out))
-    # Authoritative page count: read the finished file (page_no() can disagree
-    # after the TOC placeholder is reconciled at output time).
-    pages = len(PdfReader(str(out)).pages)
-    return {"pages": pages, "chapters": n_chapters, "parts": n_parts,
-            "index_terms": len(index_map or {}), "first_body_page": first_body_page or 1,
-            "output": str(out)}
+    return {"pages": len(PdfReader(str(out)).pages), "chapters": n_chapters,
+            "parts": n_parts, "index_terms": len(index_map or {}),
+            "first_body_page": first_body_page or 1,
+            "toc_entries": pdf.toc_entries, "output": str(out)}
 
 
 def build_pdf(config: dict, elements: list[dict], output: str | Path, *,
               index_terms: list[str] | None = None) -> dict:
-    """Render a book to ``output``. Returns stats (pages, chapters, parts).
+    """Render a book with a clickable, correctly-paginated TOC (manual two-pass).
 
-    If ``index_terms`` is given, render the body once to learn each term's body
-    pages (word-boundary matched), then re-render with a clickable index appended
-    — body pagination is identical between passes, so the page references resolve.
+    Pass 1 renders front matter + body (no TOC) to learn each section's page and,
+    if needed, each index term's pages. The TOC's exact page span ``T`` is then
+    pre-measured. Pass 2 renders front matter + the TOC (exactly ``T`` pages, with
+    FINAL page numbers = pass-1 page + ``T``) + body, so the body lands precisely
+    after the TOC: no reserved-page blanks, no drift, and every TOC/index number
+    resolves to its real page.
     """
+    import tempfile
+
+    from pypdf import PdfReader
+
+    # PASS 1 — section pages (and page text for the index), no TOC.
+    tmp = Path(tempfile.mkdtemp()) / "_pass1.pdf"
+    p1 = _build(config, elements, tmp)
+    toc_span = _count_toc_pages(config, [(t, lvl) for t, lvl, _ in p1["toc_entries"]])
+
+    toc_final = [(t, lvl, pg + toc_span) for t, lvl, pg in p1["toc_entries"]]
+    index_map = None
     if index_terms:
-        import tempfile
-
-        from pypdf import PdfReader
-
-        tmp = Path(tempfile.mkdtemp()) / "_bodyonly.pdf"
-        body_stats = _render(config, elements, tmp, index_map=None)
         pages_text = [(pg.extract_text() or "") for pg in PdfReader(str(tmp)).pages]
-        index_map = find_term_pages(pages_text, index_terms,
-                                    start_page=body_stats["first_body_page"])
-        return _render(config, elements, output, index_map=index_map)
-    return _render(config, elements, output, index_map=None)
+        raw = find_term_pages(pages_text, index_terms, start_page=p1["first_body_page"])
+        index_map = {term: [pg + toc_span for pg in pages] for term, pages in raw.items()}
+
+    # PASS 2 — final, with the explicit TOC.
+    return _build(config, elements, output, toc_final=toc_final, index_map=index_map)

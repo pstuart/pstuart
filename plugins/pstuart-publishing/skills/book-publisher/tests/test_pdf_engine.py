@@ -116,6 +116,44 @@ def test_table_content_survives_untruncated(tmp_path):
     assert "$850" in text
 
 
+def _white_ratio(img):
+    px = list(img.getdata())
+    return sum(1 for p in px if sum(p[:3]) > 735) / len(px)
+
+
+def test_toc_clean_no_blank_gap_no_stray_folio(tmp_path):
+    """Regression for the TOC bugs: Contents on its own page, the body immediately
+    after the TOC (no reserved-page blank gap), and no folio printed on TOC pages."""
+    import subprocess
+    from PIL import Image
+    # a book big enough that the TOC spans >1 page
+    chapters = "".join(
+        f"# CHAPTER {i}\n## Topic {i}\n\n## Section A\n\nText.\n\n## Section B\n\nText.\n\n"
+        for i in range(1, 9)
+    )
+    out = tmp_path / "b.pdf"
+    build_pdf({"title": "T", "author": "A", "year": "2026"}, parse_manuscript(chapters), out)
+    reader = PdfReader(str(out))
+    texts = [(pg.extract_text() or "") for pg in reader.pages]
+
+    toc_idx = next(i for i, t in enumerate(texts) if t.strip().startswith("Contents"))
+    first_ch = next(i for i, t in enumerate(texts) if "CHAPTER 1" in t or "Topic 1" in t)
+    # No fully-blank page between the TOC start and the first chapter.
+    import os
+    d = tmp_path / "imgs"
+    d.mkdir()
+    subprocess.run(["pdftoppm", "-png", "-r", "40", str(out), f"{d}/p"], capture_output=True)
+    imgs = sorted(os.listdir(d))
+    d = str(d)
+    for i in range(toc_idx, first_ch):  # TOC pages
+        assert _white_ratio(Image.open(f"{d}/{imgs[i]}").convert("RGB")) < 0.985, \
+            f"blank gap page at index {i}"
+    # TOC pages carry no folio: the page's own number must not appear as a lone line.
+    for i in range(toc_idx, first_ch):
+        lines = [ln.strip() for ln in texts[i].splitlines() if ln.strip()]
+        assert str(i + 1) not in lines[-1:], f"stray folio on TOC page {i + 1}"
+
+
 def test_pdf_links_point_to_real_pages(tmp_path):
     _, reader = _build(tmp_path)
     npages = len(reader.pages)

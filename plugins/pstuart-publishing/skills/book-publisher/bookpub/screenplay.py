@@ -21,7 +21,7 @@ from __future__ import annotations
 import re
 from pathlib import Path
 
-from bookpub.pdf_engine import SERIF, BookPDF
+from bookpub.pdf_engine import SERIF, BookPDF, _count_toc_pages, _TocEntry
 from bookpub.text import sanitize_text
 
 _ACT_RE = re.compile(r"^#\s+\*{0,2}\s*(NIGHT|ACT|PART)\b", re.IGNORECASE)
@@ -123,6 +123,7 @@ class ScreenplayPDF(BookPDF):
     def act_divider(self, title: str):
         self.add_page()
         self.start_section(title, level=0, strict=False)
+        self.toc_entries.append((title, 0, self.page_no()))
         self.ln(2.5)
         self._text(0, 0.45, title, style="B", size=22, color="heading",
                    align="C", strip=True)
@@ -130,6 +131,7 @@ class ScreenplayPDF(BookPDF):
     def scene_open(self, title: str):
         self.add_page()
         self.start_section(title, level=1, strict=False)
+        self.toc_entries.append((title, 1, self.page_no()))
         self.ln(0.6)
         self._text(0, 0.4, title, style="B", size=16, color="heading",
                    align="C", strip=True)
@@ -201,33 +203,47 @@ class ScreenplayPDF(BookPDF):
                 self.action(b["text"])
 
 
-def build_screenplay(config: dict, manuscript_md: str, output: str | Path) -> dict:
-    """Render a screenplay to PDF. ``config`` supplies title/author/etc."""
-    import math
-
+def _build_screenplay(config: dict, elements: list[dict], output: str | Path, *,
+                      toc_final: list[tuple[str, int, int]] | None = None) -> dict:
     from pypdf import PdfReader
 
-    elements = parse_screenplay(manuscript_md)
     pdf = ScreenplayPDF(config)
     pdf.title_page()
     pdf.copyright_page()
     pdf.dedication_page()
 
-    n_scenes = sum(1 for e in elements if e["kind"] == "scene")
-    toc_pages = max(1, math.ceil((len(elements) + 3) / 24))
-    pdf.insert_toc_placeholder(pdf._render_toc, pages=toc_pages, allow_extra_pages=True)
+    if toc_final is not None:
+        pdf._in_toc = True
+        pdf.add_page()
+        toc_start = pdf.page_no()
+        pdf._render_toc(pdf, [_TocEntry(t, lvl, pg) for t, lvl, pg in toc_final])
+        pdf._toc_page_range = (toc_start, pdf.page_no())
+        pdf._in_toc = False
     pdf.in_front_matter = False
 
-    n_acts = 0
+    n_acts = n_scenes = 0
     for el in elements:
         if el["kind"] == "act":
             pdf.act_divider(el["title"]); n_acts += 1
         else:
             pdf.scene_open(el["title"])
             pdf.render_scene(el.get("blocks", []))
+            n_scenes += 1
 
     out = Path(output)
     out.parent.mkdir(parents=True, exist_ok=True)
     pdf.output(str(out))
-    return {"acts": n_acts, "scenes": n_scenes,
+    return {"acts": n_acts, "scenes": n_scenes, "toc_entries": pdf.toc_entries,
             "pages": len(PdfReader(str(out)).pages), "output": str(out)}
+
+
+def build_screenplay(config: dict, manuscript_md: str, output: str | Path) -> dict:
+    """Render a screenplay with a clickable, correctly-paginated TOC (two-pass)."""
+    import tempfile
+
+    elements = parse_screenplay(manuscript_md)
+    tmp = Path(tempfile.mkdtemp()) / "_pass1.pdf"
+    p1 = _build_screenplay(config, elements, tmp)
+    toc_span = _count_toc_pages(config, [(t, lvl) for t, lvl, _ in p1["toc_entries"]])
+    toc_final = [(t, lvl, pg + toc_span) for t, lvl, pg in p1["toc_entries"]]
+    return _build_screenplay(config, elements, output, toc_final=toc_final)

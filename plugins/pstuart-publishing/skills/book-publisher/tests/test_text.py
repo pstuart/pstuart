@@ -44,8 +44,8 @@ def test_strip_markdown_link_text_only():
     assert strip_markdown("see [the docs](https://x.y)") == "see the docs"
 
 
-def test_strip_markdown_checkboxes_become_sentinels():
-    out = strip_markdown("- [x] done")
-    assert "\x01CHECKED\x01" in out
-    out2 = strip_markdown("- [ ] todo")
-    assert "\x01UNCHECKED\x01" in out2
+def test_strip_markdown_checkboxes_become_real_squares():
+    # Must be glyphs the bundled serif contains (no \x01 control-char leak).
+    assert "■" in strip_markdown("- [x] done")
+    assert "□" in strip_markdown("- [ ] todo")
+    assert "\x01" not in strip_markdown("- [ ] todo - [x] done")

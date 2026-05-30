@@ -443,13 +443,39 @@ def _parse_table(block: list[str]) -> list[list[str]]:
 
 
 _PART_RE = re.compile(r"^\s*part\b", re.IGNORECASE)
+# Front/back matter: titled, but NOT numbered "Chapter N".
+_FRONTBACK_RE = re.compile(
+    r"^\s*(introduction|conclusion|foreword|preface|prologue|epilogue|afterword|"
+    r"acknowledg|about the|appendix|glossary|epigraph|colophon)\b", re.IGNORECASE)
+_BARE_CHAPTER_RE = re.compile(r"^\s*chapter\s+(\d+)\s*$", re.IGNORECASE)
+_NUM_TITLE_RE = re.compile(r"^\s*chapter\s+(\d+)\s*[:.\-]\s*(.+)$", re.IGNORECASE)
+
+
+def _promote_h2_title(body: str) -> tuple[str | None, str]:
+    """For a bare `# CHAPTER N`, the real title is the following `## Title`."""
+    lines = body.splitlines()
+    for j, ln in enumerate(lines):
+        if ln.strip() == "":
+            continue
+        if ln.startswith("## "):
+            return ln[3:].strip(), "\n".join(lines[j + 1:])
+        break
+    return None, body
 
 
 def parse_manuscript(md: str) -> list[dict]:
-    """Minimal parser for the project's `# CHAPTER` / `# PART` convention."""
+    """Parser for the project's `# PART` / `# CHAPTER N` / front-matter convention.
+
+    - `# PART ...` -> part divider.
+    - bare `# CHAPTER 3` -> numbered chapter; the following `## Title` is promoted.
+    - `# CHAPTER 3: Title` -> numbered chapter with inline title.
+    - `# Introduction` / `# Conclusion` / ... -> UNNUMBERED chapter (no "CHAPTER N"
+      eyebrow), body kept intact (its `## ` lines stay as sections).
+    - any other `# Title` -> auto-numbered chapter titled by the H1.
+    """
     elements: list[dict] = []
     chunks = re.split(r"(?m)^# (.+)$", md)
-    ch_num = part_num = 0
+    part_num = auto_num = 0
     for i in range(1, len(chunks), 2):
         h1 = chunks[i].strip()
         body = chunks[i + 1] if i + 1 < len(chunks) else ""
@@ -459,19 +485,23 @@ def parse_manuscript(md: str) -> list[dict]:
             elements.append({"kind": "part", "number": part_num,
                              "title": re.sub(r"^[Pp]art\s+[^:]*:\s*", "", h1) or h1,
                              "subtitle": m.group(1) if m else None})
+            continue
+
+        bare = _BARE_CHAPTER_RE.match(h1)
+        num_title = _NUM_TITLE_RE.match(h1)
+        if bare:
+            number = int(bare.group(1))
+            promoted, body = _promote_h2_title(body)
+            title = promoted or h1
+        elif num_title:
+            number, title = int(num_title.group(1)), num_title.group(2).strip()
+        elif _FRONTBACK_RE.match(h1):
+            number, title = None, h1
         else:
-            ch_num += 1
-            title = h1
-            body_lines = body.splitlines()
-            for j, ln in enumerate(body_lines):
-                if ln.strip() == "":
-                    continue
-                if ln.startswith("## "):
-                    title = ln[3:].strip()
-                    body = "\n".join(body_lines[j + 1:])
-                break
-            elements.append({"kind": "chapter", "number": ch_num,
-                             "title": title, "body": body})
+            auto_num += 1
+            number, title = auto_num, h1
+        elements.append({"kind": "chapter", "number": number,
+                         "title": title, "body": body})
     return elements
 
 

@@ -33,7 +33,7 @@ from bookpub.pdf_engine import (
     parse_manuscript,
 )
 from bookpub.qa_report import is_placeholder_isbn
-from bookpub.text import sanitize_text
+from bookpub.text import render_checkboxes, sanitize_text
 
 EPUB_CSS = """\
 html { font-size: 100%; }
@@ -71,6 +71,7 @@ def _inline(text: str) -> str:
     """Inline markdown -> XHTML, HTML-escaped, with real Unicode punctuation."""
     t = _html.escape(text, quote=False)
     t = sanitize_text(t)
+    t = render_checkboxes(t)
     t = re.sub(r"\*\*(.+?)\*\*", r"<strong>\1</strong>", t)
     t = re.sub(r"(?<!\*)\*(?!\*)(.+?)\*(?!\*)", r"<em>\1</em>", t)
     t = re.sub(r"`(.+?)`", r"<code>\1</code>", t)

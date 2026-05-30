@@ -50,17 +50,24 @@ def sanitize_text(text: str, *, em_dash: bool = True) -> str:
     return text
 
 
-# Sentinels consumed downstream by the renderer to draw checkbox glyphs.
-CHECKED = "\x01CHECKED\x01"
-UNCHECKED = "\x01UNCHECKED\x01"
+# Checkbox glyphs the bundled serif actually contains (verified: U+25A0/U+25A1).
+# Earlier revisions used \x01 sentinels that no renderer consumed — they leaked
+# into output as control characters (missing-glyph tofu). Use real squares.
+CHECKED = "■"    # U+25A0 black square
+UNCHECKED = "□"  # U+25A1 white square
+
+
+def render_checkboxes(text: str) -> str:
+    """Replace `[x]` / `[ ]` task markers with squares the serif can render."""
+    text = re.sub(r"\[\s*[xX]\s*\]", CHECKED, text)
+    return re.sub(r"\[\s*\]", UNCHECKED, text)
 
 
 def strip_markdown(text: str, *, em_dash: bool = True) -> str:
     """Sanitise then strip inline markdown to plain text (for headings, TOC,
     running headers, and anywhere styled spans must collapse to text)."""
     text = sanitize_text(text, em_dash=em_dash)
-    text = re.sub(r"\[\s*[xX]\s*\]", CHECKED, text)
-    text = re.sub(r"\[\s*\]", UNCHECKED, text)
+    text = render_checkboxes(text)
     text = re.sub(r"\*\*(.+?)\*\*", r"\1", text)      # bold
     text = re.sub(r"\*(.+?)\*", r"\1", text)          # italic
     text = re.sub(r"_(.+?)_", r"\1", text)            # underscore italic

@@ -1,8 +1,18 @@
 """Tests for bookpub.pdf_engine — clickable TOC links + bookmark outline."""
 from pypdf import PdfReader
 
-from bookpub.pdf_engine import build_pdf, parse_manuscript
+from bookpub.pdf_engine import _is_scene_break, build_pdf, parse_manuscript
 from bookpub.qa_report import _count_outline
+
+
+def test_scene_break_detection():
+    assert _is_scene_break(["---"])
+    assert _is_scene_break(["***"])
+    assert _is_scene_break(["* * *"])
+    assert _is_scene_break(["- - -"])
+    assert not _is_scene_break(["- a list item"])   # must not eat list items
+    assert not _is_scene_break(["normal text"])
+    assert not _is_scene_break(["---", "more"])      # only a lone divider
 
 MANUSCRIPT = """\
 # PART I: Foundations

@@ -27,6 +27,7 @@ from ebooklib import epub
 from bookpub.pdf_engine import (
     _CALLOUT_RE,
     _is_list,
+    _is_scene_break,
     _is_table,
     _parse_table,
     _split_blocks,
@@ -57,6 +58,8 @@ th, td { border: 1px solid #bbb; padding: 0.3em 0.5em; text-align: left; }
 th { background: #1e3a5f; color: #fff; }
 .callout { border: 1px solid #c9a227; background: #faf7ef; padding: 0.6em 0.8em;
            margin: 1em 0; }
+p.scene-break { text-align: center; margin: 1.5em 0; color: #666;
+                letter-spacing: 0.4em; }
 nav[epub|type~="toc"] ol { list-style: none; }
 @media (prefers-color-scheme: dark) {
     body { background: #1a1a1a; color: #e8e8e8; }
@@ -108,6 +111,8 @@ def body_to_xhtml(body: str) -> str:
             out.append(f"<pre><code>{esc}</code></pre>")
         elif _is_table(block):
             out.append(_table_xhtml(_parse_table(block)))
+        elif _is_scene_break(block):
+            out.append('<p class="scene-break">* * *</p>')
         elif first.lstrip().startswith(">"):
             txt = " ".join(re.sub(r"^\s*>\s?", "", ln) for ln in block)
             out.append(f"<blockquote><p>{_inline(txt)}</p></blockquote>")

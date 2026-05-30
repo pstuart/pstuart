@@ -195,6 +195,8 @@ class BookPDF(FPDF):
                 self._code_block(block)
             elif _is_table(block):
                 self.render_table(_parse_table(block))
+            elif _is_scene_break(block):
+                self._scene_break()
             elif first.lstrip().startswith(">"):
                 self._blockquote(block)
             elif _is_list(first):
@@ -218,6 +220,14 @@ class BookPDF(FPDF):
     def _paragraph(self, text: str):
         self._text(0, 0.205, text, size=11, color="body", align="J", strip=True)
         self.ln(0.07)
+
+    def _scene_break(self):
+        """Centered divider for `---` / `***` / `* * *` (novel scene breaks)."""
+        self.ln(0.12)
+        self.set_font(SERIF, "", 12)
+        self.set_text_color(*self.palette["muted"])
+        self.cell(0, 0.25, "* * *", align="C", new_x="LMARGIN", new_y="NEXT")
+        self.ln(0.12)
 
     def _blockquote(self, lines: list[str]):
         text = " ".join(re.sub(r"^\s*>\s?", "", ln) for ln in lines)
@@ -425,6 +435,15 @@ def _split_blocks(body: str) -> list[list[str]]:
 
 def _is_list(line: str) -> bool:
     return bool(re.match(r"^\s*(?:[-*+]|\d+\.)\s+", line))
+
+
+def _is_scene_break(block: list[str]) -> bool:
+    """A lone `---`, `***`, `* * *`, `___`, `- - -` line (a novel scene break).
+    Checked before _is_list because `* * *` also matches the list pattern."""
+    if len(block) != 1:
+        return False
+    s = block[0].strip().replace(" ", "")
+    return len(s) >= 3 and len(set(s)) == 1 and s[0] in "*-_"
 
 
 def _is_table(block: list[str]) -> bool:

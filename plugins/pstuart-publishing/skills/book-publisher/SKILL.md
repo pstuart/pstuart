@@ -500,7 +500,10 @@ spine_width_inches = page_count * paper_thickness
 # paper_thickness = 0.002252 (white) or 0.002500 (cream)
 ```
 
-Spine text is only drawn when the spine is ≥ 0.0625" (~28 pages white, ~25 pages cream).
+Spine text is only drawn at **KDP's 100-page minimum** for spine text. (0.0625" is
+merely the geometric floor where *any* spine exists; KDP requires ≥ 100 pages before
+it will accept spine text. Use the 100-page rule.) See
+`references/amazon-kdp-requirements.md`.
 
 ### Validation
 
@@ -684,7 +687,7 @@ More detailed content here.
 ### Paperback Cover Specifications
 - Calculate exact dimensions based on page count and paper type
 - Include 0.125" bleed on all edges
-- Spine text only if spine > 0.0625" (typically 79+ pages)
+- Spine text only at KDP's **100-page minimum** (0.0625" is the geometric floor, not the spine-text rule)
 - Leave barcode area: ~2" x 1.2" on back cover lower right
 - Resolution: 300 DPI
 

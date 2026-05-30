@@ -26,12 +26,26 @@ import re
 # 2026-05-29. Mapped to ASCII so prose never renders an empty box. If the bundled
 # serif ever changes, re-verify and update this map (and only this map).
 _MISSING_GLYPH_FALLBACKS = {
-    "─": "-",    # ─ box drawings light horizontal
-    "│": "|",    # │ box drawings light vertical
-    "├": "|--",  # ├ box drawings light vertical and right
-    "└": "`--",  # └ box drawings light up and right
-    "�": "?",    # replacement character (decoding casualty)
+    "─": "-", "│": "|", "├": "|-", "└": "`-",   # light box drawing
+    "┌": "+", "┐": "+", "┘": "+", "┤": "+",     # corners / tees (full set)
+    "┬": "+", "┴": "+", "┼": "+", "═": "=", "║": "|",
+    "●": "•", "◐": "•", "◆": "•", "▪": "•", "►": ">", "▶": ">",  # geometric -> ascii
+    "█": "#", "▓": "#", "▒": ":", "░": ".",       # shading blocks (ascii-art bars)
+    "�": "?",                                     # replacement character
 }
+
+# Pictographic ranges no print font (serif or mono) carries: emoji, dingbats,
+# technical & arrow symbols. Stripped rather than tofu'd. These ranges deliberately
+# EXCLUDE Geometric Shapes (U+25A0–25FF) so the □/■ checkbox squares survive; real
+# punctuation (em/en-dash, quotes, ellipsis) is far below these ranges.
+_PICTOGRAPH_RE = re.compile(
+    "[\U0001F000-\U0001FAFF"   # emoji & supplemental symbols/pictographs
+    "\U00002600-\U000026FF"    # miscellaneous symbols (☀ ☎ …)
+    "\U00002700-\U000027FF"    # dingbats + misc (✓ ✗ ⟳ …)
+    "\U00002300-\U000023FF"    # technical (⏸ ⎇ …)
+    "\U00002B00-\U00002BFF"    # arrows / geometric supplement
+    "️‍]"            # variation selector / zero-width joiner
+)
 
 
 def sanitize_text(text: str, *, em_dash: bool = True) -> str:
@@ -47,7 +61,7 @@ def sanitize_text(text: str, *, em_dash: bool = True) -> str:
     for ch, repl in _MISSING_GLYPH_FALLBACKS.items():
         if ch in text:
             text = text.replace(ch, repl)
-    return text
+    return _PICTOGRAPH_RE.sub("", text)
 
 
 # Checkbox glyphs the bundled serif actually contains (verified: U+25A0/U+25A1).
@@ -55,6 +69,17 @@ def sanitize_text(text: str, *, em_dash: bool = True) -> str:
 # into output as control characters (missing-glyph tofu). Use real squares.
 CHECKED = "■"    # U+25A0 black square
 UNCHECKED = "□"  # U+25A1 white square
+
+
+def strip_unsupported(text: str) -> str:
+    """Drop/degrade glyphs no bundled font can render, for VERBATIM contexts
+    (fenced code) that bypass :func:`sanitize_text` to preserve code-significant
+    characters like ``--``. Applies the missing-glyph fallbacks + pictograph strip
+    only — never the em-dash transform."""
+    for ch, repl in _MISSING_GLYPH_FALLBACKS.items():
+        if ch in text:
+            text = text.replace(ch, repl)
+    return _PICTOGRAPH_RE.sub("", text)
 
 
 def render_checkboxes(text: str) -> str:

@@ -30,6 +30,17 @@ def test_no_lossy_encode():
 def test_box_drawing_falls_back_to_ascii():
     # The only glyphs the bundled serif lacks get ASCII fallbacks (no tofu).
     assert sanitize_text("a─b│c") == "a-b|c"
+    assert sanitize_text("┌┬┐") == "+++"
+
+
+def test_emoji_and_symbols_stripped_but_squares_survive():
+    # Pictographs no print font carries are stripped (no tofu)...
+    assert sanitize_text("deploy 🐍🐳 done ✓✗ ⟳") == "deploy  done  "
+    # ...but the checkbox squares we DO render must survive.
+    assert "□" in sanitize_text("□ todo")
+    assert "■" in sanitize_text("■ done")
+    # geometric bullets degrade to a real bullet
+    assert sanitize_text("● item") == "• item"
 
 
 def test_em_dash_disabled_keeps_double_hyphen():

@@ -70,7 +70,10 @@ def build_book(book_toml: str | Path, out_dir: str | Path) -> dict:
     interior = out / f"{slug}_interior.pdf"
     pdf_stats = build_pdf(pdf_cfg, elements, interior, index_terms=index_terms)
     epub_path = out / f"{slug}.epub"
-    epub_stats = build_epub(for_epub(cfg), elements, epub_path, index_terms=index_terms)
+    # Image references resolve relative to the book root and its manuscript dir.
+    asset_bases = [base, base / cfg.get("manuscript_dir", "manuscript"), base / "publishing"]
+    epub_stats = build_epub(for_epub(cfg), elements, epub_path, index_terms=index_terms,
+                            asset_bases=asset_bases)
 
     # 3) Gate both artifacts.
     allow_dashes = int(cfg.get("allow_dashes", 0))

@@ -22,7 +22,7 @@ from fpdf.enums import MethodReturnValue
 
 from bookpub.fonts import register_mono, register_serif
 from bookpub.index import compress_ranges, find_term_pages
-from bookpub.text import sanitize_text, strip_markdown
+from bookpub.text import sanitize_text, strip_markdown, strip_unsupported
 
 SERIF = "serif"
 MONO = "mono"
@@ -297,9 +297,10 @@ class BookPDF(FPDF):
         self.rect(x0, y0, self.epw, h, "F")
         self.set_text_color(*self.palette["body"])
         self.set_xy(x0 + pad, y0 + pad)
-        for ln in code:  # verbatim: no markdown/sanitize, so '--' survives
+        for ln in code:  # verbatim ('--' survives), but drop unrenderable glyphs
             self.set_x(x0 + pad)
-            self.cell(self.epw - 2 * pad, line_h, ln, new_x="LMARGIN", new_y="NEXT")
+            self.cell(self.epw - 2 * pad, line_h, strip_unsupported(ln),
+                      new_x="LMARGIN", new_y="NEXT")
         self.set_y(y0 + h)
         self.ln(0.08)
 

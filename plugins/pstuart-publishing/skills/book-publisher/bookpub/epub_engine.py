@@ -34,7 +34,7 @@ from bookpub.pdf_engine import (
     parse_manuscript,
 )
 from bookpub.qa_report import is_placeholder_isbn
-from bookpub.text import render_checkboxes, sanitize_text
+from bookpub.text import render_checkboxes, sanitize_text, strip_unsupported
 
 EPUB_CSS = """\
 html { font-size: 100%; }
@@ -70,16 +70,29 @@ nav[epub|type~="toc"] ol { list-style: none; }
 """
 
 
+def _link_sub(m: re.Match) -> str:
+    """Keep real links; drop inter-chapter `.md` links (they don't exist inside an
+    EPUB and fail epubcheck RSC-007) to their text."""
+    text, href = m.group(1), m.group(2)
+    if re.search(r"\.md(#|$)", href, re.I) or href.lower().endswith(".markdown"):
+        return text
+    return f'<a href="{href}">{text}</a>'
+
+
 def _inline(text: str) -> str:
     """Inline markdown -> XHTML, HTML-escaped, with real Unicode punctuation."""
     t = _html.escape(text, quote=False)
     t = sanitize_text(t)
     t = render_checkboxes(t)
+    t = re.sub(r"!\[([^\]]*)\]\([^)]*\)", r"\1", t)  # inline image -> alt (block images bundled)
     t = re.sub(r"\*\*(.+?)\*\*", r"<strong>\1</strong>", t)
     t = re.sub(r"(?<!\*)\*(?!\*)(.+?)\*(?!\*)", r"<em>\1</em>", t)
     t = re.sub(r"`(.+?)`", r"<code>\1</code>", t)
-    t = re.sub(r"\[(.+?)\]\((.+?)\)", r'<a href="\2">\1</a>', t)
+    t = re.sub(r"\[(.+?)\]\((.+?)\)", _link_sub, t)
     return t
+
+
+_IMG_BLOCK_RE = re.compile(r"^!\[([^\]]*)\]\(([^)]+)\)$")
 
 
 def _table_xhtml(rows: list[list[str]]) -> str:
@@ -95,19 +108,31 @@ def _table_xhtml(rows: list[list[str]]) -> str:
     return f"<table><thead><tr>{head}</tr></thead><tbody>{body}</tbody></table>"
 
 
-def body_to_xhtml(body: str) -> str:
-    """Render a chapter body (markdown) to an XHTML fragment."""
+def body_to_xhtml(body: str, register_image=None) -> str:
+    """Render a chapter body (markdown) to an XHTML fragment.
+
+    ``register_image(src) -> internal_href | None`` bundles a referenced image
+    into the EPUB and returns its in-package path (else None -> alt-text fallback).
+    """
     out: list[str] = []
     for block in _split_blocks(body):
         first = block[0]
         joined = " ".join(block)
-        if first.startswith("## "):
+        img = _IMG_BLOCK_RE.match(first.strip()) if len(block) == 1 else None
+        if img:
+            href = register_image(img.group(2)) if register_image else None
+            alt = _html.escape(img.group(1), quote=True)
+            if href:
+                out.append(f'<figure><img src="{href}" alt="{alt}"/></figure>')
+            else:
+                out.append(f'<p><em>[image: {alt or _html.escape(img.group(2))}]</em></p>')
+        elif first.startswith("## "):
             out.append(f"<h2>{_inline(first[3:].strip())}</h2>")
         elif first.startswith("### "):
             out.append(f"<h3>{_inline(first[4:].strip())}</h3>")
         elif first.startswith(("```", "~~~")):
             code = [ln for ln in block if not ln.startswith(("```", "~~~"))]
-            esc = "\n".join(_html.escape(ln) for ln in code)
+            esc = "\n".join(_html.escape(strip_unsupported(ln)) for ln in code)
             out.append(f"<pre><code>{esc}</code></pre>")
         elif _is_table(block):
             out.append(_table_xhtml(_parse_table(block)))
@@ -163,9 +188,39 @@ def _add_accessibility_metadata(book: epub.EpubBook) -> None:
          "EPUB Accessibility 1.1 - WCAG 2.1 Level AA")
 
 
+def _make_image_registrar(book: epub.EpubBook, asset_bases: list[Path]):
+    """Return register_image(src) that bundles an image found under any asset base
+    into the EPUB and returns its in-package href (None if not found)."""
+    seen: dict[str, str] = {}
+
+    def register(src: str) -> str | None:
+        rel = src.lstrip("./")
+        for base in asset_bases:
+            for cand in (Path(base) / src, Path(base) / rel, Path(base) / Path(src).name):
+                try:
+                    cand = cand.resolve()
+                except OSError:
+                    continue
+                if cand.is_file():
+                    key = str(cand)
+                    if key in seen:
+                        return seen[key]
+                    name = f"images/{cand.name}"
+                    media = "image/png" if cand.suffix.lower() == ".png" else "image/jpeg"
+                    book.add_item(epub.EpubImage(uid=f"img_{len(seen)}", file_name=name,
+                                                 media_type=media, content=cand.read_bytes()))
+                    seen[key] = name
+                    return name
+        return None
+
+    return register
+
+
 def build_epub(config: dict, elements: list[dict], output: str | Path, *,
-               index_terms: list[str] | None = None) -> dict:
+               index_terms: list[str] | None = None,
+               asset_bases: list[Path] | None = None) -> dict:
     book = epub.EpubBook()
+    register_image = _make_image_registrar(book, asset_bases or [])
     book.set_identifier(_identifier(config))
     book.set_title(sanitize_text(config["title"]))
     book.set_language(config.get("language", "en"))
@@ -217,7 +272,7 @@ def build_epub(config: dict, elements: list[dict], output: str | Path, *,
                         if el.get("number") else "")
             content = (f'<section epub:type="bodymatter chapter" role="doc-chapter" id="{uid}">'
                        f'{num_html}<h1 class="chapter-title">{_inline(title)}</h1>'
-                       f'{body_to_xhtml(el.get("body", ""))}</section>')
+                       f'{body_to_xhtml(el.get("body", ""), register_image)}</section>')
             doc = epub.EpubHtml(uid=uid, file_name=f"{uid}.xhtml", title=title, lang="en")
             doc.content = content
             doc.add_link(href="style/main.css", rel="stylesheet", type="text/css")

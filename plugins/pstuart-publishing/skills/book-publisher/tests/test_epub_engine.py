@@ -92,6 +92,44 @@ def test_table_to_xhtml(tmp_path):
     assert "<td>two hundred</td>" in html  # not truncated
 
 
+def test_md_links_dropped_to_text():
+    # inter-chapter .md nav links don't exist in an EPUB -> drop to text
+    assert body_to_xhtml("See [next chapter](02-usage.md) please") \
+        == "<p>See next chapter please</p>"
+    # real links survive
+    assert '<a href="https://x.y">' in body_to_xhtml("[site](https://x.y)")
+
+
+def test_inline_image_becomes_alt_text():
+    assert body_to_xhtml("text ![a diagram](d.png) more") == "<p>text a diagram more</p>"
+
+
+def test_image_block_bundled_into_epub(tmp_path):
+    from PIL import Image
+    img = tmp_path / "pic.png"
+    Image.new("RGB", (4, 4), (10, 20, 30)).save(img)
+    elements = [{"kind": "chapter", "number": 1, "title": "Ch",
+                 "body": "Intro.\n\n![a chart](pic.png)\n\nMore."}]
+    out = tmp_path / "b.epub"
+    build_epub({"title": "T", "author": "A", "year": "2026"}, elements, out,
+               asset_bases=[tmp_path])
+    import zipfile
+    with zipfile.ZipFile(out) as z:
+        names = z.namelist()
+    assert any(n.endswith("images/pic.png") for n in names), names
+
+
+def test_image_missing_falls_back_to_alt(tmp_path):
+    elements = [{"kind": "chapter", "number": 1, "title": "Ch",
+                 "body": "![missing](nope.png)"}]
+    out = tmp_path / "b.epub"
+    build_epub({"title": "T", "author": "A", "year": "2026"}, elements, out, asset_bases=[tmp_path])
+    # builds without error; no image packaged
+    import zipfile
+    with zipfile.ZipFile(out) as z:
+        assert not any("images/" in n for n in z.namelist())
+
+
 @pytest.mark.skipif(shutil.which("epubcheck") is None, reason="epubcheck not installed")
 def test_passes_epubcheck(tmp_path):
     out, _ = _build(tmp_path)

@@ -21,6 +21,7 @@ from PIL import Image, ImageDraw, ImageFont, ImageOps
 
 from bookpub.fonts import font_dir, register_serif
 from bookpub.pdf_engine import STYLE_PRESETS
+from bookpub.text import sanitize_text
 
 _SCRIM = (12, 16, 28)  # near-black used for legibility gradients
 _PAPER_THICKNESS = {"white": 0.002252, "cream": 0.0025}
@@ -85,17 +86,17 @@ def build_kindle_cover(front_art: str | Path, config: dict, out: str | Path,
     maxw = W - 2 * margin
     # Title
     tfont = _pil_font("B", int(W * 0.115))
-    tlines = _wrap_px(draw, config["title"].upper(), tfont, maxw)
+    tlines = _wrap_px(draw, sanitize_text(config["title"]).upper(), tfont, maxw)
     y = _draw_centered(draw, tlines, tfont, int(H * 0.10), W, (245, 245, 245))
     # Subtitle
     if config.get("subtitle"):
         sfont = _pil_font("I", int(W * 0.045))
-        y = _draw_centered(draw, _wrap_px(draw, config["subtitle"], sfont, maxw),
+        y = _draw_centered(draw, _wrap_px(draw, sanitize_text(config["subtitle"]), sfont, maxw),
                            sfont, y + int(H * 0.012), W, accent)
     # Author (bottom)
     if config.get("author"):
         afont = _pil_font("", int(W * 0.05))
-        _draw_centered(draw, _wrap_px(draw, config["author"], afont, maxw),
+        _draw_centered(draw, _wrap_px(draw, sanitize_text(config["author"]), afont, maxw),
                        afont, int(H * 0.88), W, (240, 240, 240))
     out = Path(out)
     out.parent.mkdir(parents=True, exist_ok=True)
@@ -147,21 +148,22 @@ def build_paperback_wrap(front_art: str | Path, config: dict, page_count: int,
     pdf.set_xy(fx, _BLEED + _SAFE + 0.2)
     pdf.set_text_color(245, 245, 245)
     pdf.set_font("serif", "B", 34)
-    pdf.multi_cell(fw, 0.55, config["title"].upper(), align="C", new_x="LMARGIN", new_y="NEXT")
+    pdf.multi_cell(fw, 0.55, sanitize_text(config["title"]).upper(), align="C", new_x="LMARGIN", new_y="NEXT")
     if config.get("subtitle"):
         pdf.set_x(fx); pdf.set_text_color(*accent); pdf.set_font("serif", "I", 16)
-        pdf.multi_cell(fw, 0.3, config["subtitle"], align="C", new_x="LMARGIN", new_y="NEXT")
+        pdf.multi_cell(fw, 0.3, sanitize_text(config["subtitle"]), align="C", new_x="LMARGIN", new_y="NEXT")
     pdf.set_xy(fx, wrap_h - _BLEED - _SAFE - 0.4)
     pdf.set_text_color(240, 240, 240); pdf.set_font("serif", "", 17)
-    pdf.multi_cell(fw, 0.3, config.get("author", ""), align="C", new_x="LMARGIN", new_y="NEXT")
+    pdf.multi_cell(fw, 0.3, sanitize_text(config.get("author", "")), align="C", new_x="LMARGIN", new_y="NEXT")
 
     # Spine text (KDP requires >= 100 pages).
     if page_count >= 100 and spine >= 0.0625:
         pdf.set_text_color(245, 245, 245)
         with pdf.rotation(90, spine_end - spine / 2, wrap_h / 2):
             pdf.set_font("serif", "B", 11)
-            pdf.set_xy(spine_end - spine / 2 - trim_h / 2 + 0.5, spine_end - spine / 2 - 0.08)
-            pdf.cell(trim_h - 1.0, spine, f"{config['title']}    {config.get('author','')}",
+            pdf.set_xy(spine_end - spine / 2 - trim_h / 2 + 0.5, wrap_h / 2 - spine / 2)
+            pdf.cell(trim_h - 1.0, spine,
+                     sanitize_text(f"{config['title']}    {config.get('author','')}"),
                      align="C")
 
     # Back panel: blurb + author, with a barcode zone if a real ISBN exists.
@@ -171,11 +173,11 @@ def build_paperback_wrap(front_art: str | Path, config: dict, page_count: int,
     blurb = config.get("description") or config.get("hook") or ""
     if blurb:
         pdf.set_text_color(235, 235, 235); pdf.set_font("serif", "", 12)
-        pdf.multi_cell(bw, 0.24, blurb, align="L", new_x="LMARGIN", new_y="NEXT")
+        pdf.multi_cell(bw, 0.24, sanitize_text(blurb), align="L", new_x="LMARGIN", new_y="NEXT")
     if config.get("author_bio"):
         pdf.ln(0.2); pdf.set_x(bx); pdf.set_font("serif", "I", 10.5)
         pdf.set_text_color(*[min(255, c + 90) for c in accent])
-        pdf.multi_cell(bw, 0.2, config["author_bio"], align="L", new_x="LMARGIN", new_y="NEXT")
+        pdf.multi_cell(bw, 0.2, sanitize_text(config["author_bio"]), align="L", new_x="LMARGIN", new_y="NEXT")
 
     _maybe_barcode(pdf, config, back_end, wrap_h)
 

@@ -72,7 +72,15 @@ def build_book(book_toml: str | Path, out_dir: str | Path) -> dict:
     epub_path = out / f"{slug}.epub"
     # Image references resolve relative to the book root and its manuscript dir.
     asset_bases = [base, base / cfg.get("manuscript_dir", "manuscript"), base / "publishing"]
-    epub_stats = build_epub(for_epub(cfg), elements, epub_path, index_terms=index_terms,
+    epub_cfg = for_epub(cfg)
+    # Embed the front cover if one has been composed. The Kindle JPG is the same
+    # front art used for the paperback wrap; it's composed (page-count-independent)
+    # alongside the wrap, so on any rebuild after the first it is already present.
+    if not epub_cfg.get("cover_image"):
+        kindle_jpg = out / f"{slug}_kindle.jpg"
+        if kindle_jpg.exists():
+            epub_cfg["cover_image"] = str(kindle_jpg)
+    epub_stats = build_epub(epub_cfg, elements, epub_path, index_terms=index_terms,
                             asset_bases=asset_bases)
 
     # 3) Gate both artifacts.

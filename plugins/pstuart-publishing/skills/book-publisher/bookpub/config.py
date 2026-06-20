@@ -83,4 +83,6 @@ def for_pdf(cfg: dict) -> dict:
 
 def for_epub(cfg: dict) -> dict:
     """Engine config for the ebook (ebook ISBN)."""
-    return _engine_config(cfg, isbn_for(cfg, "ebook"))
+    out = _engine_config(cfg, isbn_for(cfg, "ebook"))
+    out["cover_image"] = cfg.get("cover_image", "")
+    return out

@@ -72,6 +72,7 @@ def test_build_book_produces_both_artifacts(tmp_path):
     res = build_book(_book(tmp_path), out)
     assert Path(res["interior"]).exists()
     assert Path(res["epub"]).exists()
+    assert res["formats"] == ["epub", "pdf"]
     assert res["pages"] >= 4
     assert res["paperback_isbn"] == "978-1-2345-6789-7"
     assert res["ebook_isbn"] == "978-1-2345-6788-0"
@@ -79,6 +80,28 @@ def test_build_book_produces_both_artifacts(tmp_path):
     assert "_with_covers" not in str(res["manifest"])
     # gutter sized from real page count
     assert res["gutter_in"] >= 0.375
+
+
+def test_build_book_can_generate_pdf_only(tmp_path):
+    out = tmp_path / "out"
+    res = build_book(_book(tmp_path), out, formats="pdf")
+    assert Path(res["interior"]).exists()
+    assert res["epub"] is None
+    assert not (out / "sample_book.epub").exists()
+    assert res["formats"] == ["pdf"]
+    assert res["pages"] >= 4
+    assert res["qa_pass"], res["qa_fails"]
+
+
+def test_build_book_can_generate_epub_only(tmp_path):
+    out = tmp_path / "out"
+    res = build_book(_book(tmp_path), out, formats="epub")
+    assert res["interior"] is None
+    assert not (out / "sample_book_interior.pdf").exists()
+    assert Path(res["epub"]).exists()
+    assert res["formats"] == ["epub"]
+    assert res["pages"] is None
+    assert res["qa_pass"], res["qa_fails"]
 
 
 def test_build_book_passes_qa(tmp_path):

@@ -15,6 +15,7 @@ A book's ``publishing/generate.py`` becomes a ~3-line shim::
 from __future__ import annotations
 
 import re
+from collections.abc import Iterable
 from pathlib import Path
 
 from bookpub.config import (
@@ -28,6 +29,8 @@ from bookpub.discovery import kdp_paperback_manifest
 from bookpub.epub_engine import build_epub
 from bookpub.pdf_engine import build_pdf, parse_manuscript
 from bookpub.qa_report import FAIL, check_epub, check_pdf
+
+_VALID_FORMATS = {"pdf", "epub"}
 
 
 def _slug(cfg: dict) -> str:
@@ -48,57 +51,96 @@ def _assemble_manuscript(cfg: dict, base: Path) -> str:
                      "`file_order` (list of chapter files)")
 
 
-def build_book(book_toml: str | Path, out_dir: str | Path) -> dict:
+def _normalize_formats(formats: str | Iterable[str] | None) -> set[str]:
+    if formats is None:
+        return set(_VALID_FORMATS)
+    if isinstance(formats, str):
+        values = [formats]
+    else:
+        values = list(formats)
+    selected: set[str] = set()
+    for value in values:
+        fmt = value.lower()
+        if fmt == "all":
+            selected.update(_VALID_FORMATS)
+        elif fmt in _VALID_FORMATS:
+            selected.add(fmt)
+        else:
+            raise ValueError(f"unsupported build format: {value}")
+    if not selected:
+        raise ValueError("at least one build format is required")
+    return selected
+
+
+def build_book(book_toml: str | Path, out_dir: str | Path,
+               formats: str | Iterable[str] | None = None) -> dict:
     cfg = load_book_config(book_toml)
     base = Path(book_toml).parent
     out = Path(out_dir)
     out.mkdir(parents=True, exist_ok=True)
     slug = _slug(cfg)
+    selected_formats = _normalize_formats(formats)
     elements = parse_manuscript(_assemble_manuscript(cfg, base))
     index_terms = cfg.get("index_terms")
 
-    # 1) Sizing pass to learn the page count, so the binding margin (gutter)
-    #    meets the KDP minimum for the book's thickness.
-    pdf_cfg = for_pdf(cfg)
-    sizing = build_pdf(pdf_cfg, elements, out / "_sizing.pdf")
-    gutter = gutter_inches_for_pages(sizing["pages"])
-    margins = dict(pdf_cfg.get("margins") or {})
-    margins["h"] = max(margins.get("h", 0.625), gutter)
-    pdf_cfg["margins"] = margins
-
-    # 2) Final interior + EPUB from the SAME manuscript.
     interior = out / f"{slug}_interior.pdf"
-    pdf_stats = build_pdf(pdf_cfg, elements, interior, index_terms=index_terms)
     epub_path = out / f"{slug}.epub"
-    # Image references resolve relative to the book root and its manuscript dir.
-    asset_bases = [base, base / cfg.get("manuscript_dir", "manuscript"), base / "publishing"]
-    epub_cfg = for_epub(cfg)
-    # Embed the front cover if one has been composed. The Kindle JPG is the same
-    # front art used for the paperback wrap; it's composed (page-count-independent)
-    # alongside the wrap, so on any rebuild after the first it is already present.
-    if not epub_cfg.get("cover_image"):
-        kindle_jpg = out / f"{slug}_kindle.jpg"
-        if kindle_jpg.exists():
-            epub_cfg["cover_image"] = str(kindle_jpg)
-    epub_stats = build_epub(epub_cfg, elements, epub_path, index_terms=index_terms,
-                            asset_bases=asset_bases)
+    pdf_stats = None
+    gutter = None
+    epub_stats = None
+    manifest = {}
 
-    # 3) Gate both artifacts.
+    if "pdf" in selected_formats:
+        # Sizing pass learns page count so the binding margin (gutter) meets KDP
+        # minimums for the book's thickness.
+        pdf_cfg = for_pdf(cfg)
+        sizing = build_pdf(pdf_cfg, elements, out / "_sizing.pdf")
+        gutter = gutter_inches_for_pages(sizing["pages"])
+        margins = dict(pdf_cfg.get("margins") or {})
+        margins["h"] = max(margins.get("h", 0.625), gutter)
+        pdf_cfg["margins"] = margins
+        pdf_stats = build_pdf(pdf_cfg, elements, interior, index_terms=index_terms)
+        manifest = kdp_paperback_manifest(
+            interior,
+            cfg.get("cover_pdf", "(none yet)"),
+            kindle_cover_jpg=cfg.get("kindle_cover"),
+            epub=epub_path if "epub" in selected_formats else None,
+        )
+
+    if "epub" in selected_formats:
+        # Image references resolve relative to the book root and its manuscript dir.
+        asset_bases = [base, base / cfg.get("manuscript_dir", "manuscript"), base / "publishing"]
+        epub_cfg = for_epub(cfg)
+        # Embed the front cover if one has been composed. The Kindle JPG is the same
+        # front art used for the paperback wrap; it's composed (page-count-independent)
+        # alongside the wrap, so on any rebuild after the first it is already present.
+        if not epub_cfg.get("cover_image"):
+            kindle_jpg = out / f"{slug}_kindle.jpg"
+            if kindle_jpg.exists():
+                epub_cfg["cover_image"] = str(kindle_jpg)
+        epub_stats = build_epub(epub_cfg, elements, epub_path, index_terms=index_terms,
+                                asset_bases=asset_bases)
+        if "pdf" not in selected_formats:
+            manifest = {"ebook_epub": str(epub_path)}
+
+    # Gate only the artifacts requested in this build.
     allow_dashes = int(cfg.get("allow_dashes", 0))
-    pdf_findings = check_pdf(interior, release=bool(cfg.get("release")),
-                             allow_dashes=allow_dashes, min_links=1, min_outline=1)
-    epub_findings = check_epub(epub_path)
+    pdf_findings = []
+    epub_findings = []
+    if "pdf" in selected_formats:
+        pdf_findings = check_pdf(interior, release=bool(cfg.get("release")),
+                                 allow_dashes=allow_dashes, min_links=1, min_outline=1)
+    if "epub" in selected_formats:
+        epub_findings = check_epub(epub_path)
     fails = [f for f in (pdf_findings + epub_findings) if f.level == FAIL]
 
-    manifest = kdp_paperback_manifest(interior, cfg.get("cover_pdf", "(none yet)"),
-                                      kindle_cover_jpg=cfg.get("kindle_cover"),
-                                      epub=epub_path)
     return {
         "slug": slug,
-        "pages": pdf_stats["pages"],
-        "gutter_in": margins["h"],
-        "interior": str(interior),
-        "epub": str(epub_path),
+        "formats": sorted(selected_formats),
+        "pages": pdf_stats["pages"] if pdf_stats else None,
+        "gutter_in": gutter,
+        "interior": str(interior) if pdf_stats else None,
+        "epub": str(epub_path) if epub_stats else None,
         "paperback_isbn": isbn_for(cfg, "paperback"),
         "ebook_isbn": isbn_for(cfg, "ebook"),
         "manifest": manifest,
@@ -113,11 +155,18 @@ def main(argv: list[str] | None = None) -> int:
     ap = argparse.ArgumentParser(prog="bookpub-build", description="Build a book from book.toml")
     ap.add_argument("book_toml")
     ap.add_argument("-o", "--out", default="output")
+    ap.add_argument("--format", choices=["all", "pdf", "epub"], default="all",
+                    help="artifact format to build")
     args = ap.parse_args(argv)
-    result = build_book(args.book_toml, args.out)
-    print(f"\n{result['slug']}: {result['pages']}pp, gutter {result['gutter_in']}in")
-    print(f"  interior: {result['interior']}")
-    print(f"  epub:     {result['epub']}")
+    result = build_book(args.book_toml, args.out, formats=args.format)
+    if result["pages"] is not None:
+        print(f"\n{result['slug']}: {result['pages']}pp, gutter {result['gutter_in']}in")
+    else:
+        print(f"\n{result['slug']}: EPUB build")
+    if result["interior"]:
+        print(f"  interior: {result['interior']}")
+    if result["epub"]:
+        print(f"  epub:     {result['epub']}")
     if result["qa_fails"]:
         print("  QA FAIL:")
         for f in result["qa_fails"]:

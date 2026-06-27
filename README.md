@@ -2,7 +2,7 @@
 
 # Patrick D. Stuart
 
-**Senior Frontend Engineer** · **AI-Augmented Development Pioneer** · **Technical Leader**
+**Engineering Manager** · **AI-Augmented Development Pioneer** · **Tooling Innovator**
 
 [![Stuart Technologies](https://img.shields.io/badge/Stuart_Technologies-4285F4?style=for-the-badge&logo=google-chrome&logoColor=white)](https://stuarttech.com)
 [![Website](https://img.shields.io/badge/patrickstuart.com-000000?style=for-the-badge&logo=About.me&logoColor=white)](https://patrickstuart.com)
@@ -33,7 +33,7 @@ Keep tabs on your AI coding assistant usage right from your terminal.
 
 ---
 
-Software engineer with **25+ years** building for web and mobile. I specialize in Vue/Nuxt applications, Swift/iOS development, and AI-augmented workflows using Claude Code, Cursor, and Copilot to accelerate delivery and improve code quality.
+Software engineer with **25+ years** building for web and mobile. I specialize in Vue/Nuxt applications, Swift/iOS development, and AI-augmented workflows using Claude Code, Cursor, Codex, Grok Build, Antigravity, and Copilot to accelerate delivery and improve code quality.
 
 Started coding at age 8 — first app: a Pascal grading tool in 1992. Purdue grad '97. Lifelong builder, family man, and volunteer.
 
@@ -42,9 +42,9 @@ Started coding at age 8 — first app: a Pascal grading tool in 1992. Purdue gra
 ## Currently
 
 - Running **[Stuart Technologies](https://stuarttech.com)** — relaunched 2025 to build better apps & websites
-- Building next-gen travel experiences at **Avoya Travel** with Nuxt 4, Vue 3, and Tailwind
+- **Engineering Manager** building next-gen travel experiences at **Avoya Travel** with Nuxt 4, Vue 3, and Tailwind
 - Developing **Swift/SwiftUI** apps for iOS and macOS
-- Pioneering **AI-augmented development** with Claude Code, Cursor, Gemini, and Copilot
+- Pioneering **AI-augmented development** with Claude Code, Cursor, Codex, Grok Build, Antigravity, and more
 
 <br>
 
@@ -68,9 +68,18 @@ Started coding at age 8 — first app: a Pascal grading tool in 1992. Purdue gra
 <p>
 <img src="https://img.shields.io/badge/Claude_Code-D97757?style=for-the-badge&logo=anthropic&logoColor=white" height="30" />
 <img src="https://img.shields.io/badge/Cursor-000000?style=for-the-badge&logo=cursor&logoColor=white" height="30" />
+<img src="https://img.shields.io/badge/Codex-74AA9C?style=for-the-badge&logo=openai&logoColor=white" height="30" />
+<img src="https://img.shields.io/badge/Grok_Build-000000?style=for-the-badge&logo=x&logoColor=white" height="30" />
+<img src="https://img.shields.io/badge/Antigravity-4285F4?style=for-the-badge&logo=google&logoColor=white" height="30" />
 <img src="https://img.shields.io/badge/GitHub_Copilot-000000?style=for-the-badge&logo=githubcopilot&logoColor=white" height="30" />
 <img src="https://img.shields.io/badge/Gemini-8E75B2?style=for-the-badge&logo=googlegemini&logoColor=white" height="30" />
 <img src="https://img.shields.io/badge/ChatGPT-74AA9C?style=for-the-badge&logo=openai&logoColor=white" height="30" />
+</p>
+
+<p><b>Creative &amp; Generative AI</b></p>
+<p>
+<img src="https://img.shields.io/badge/Grok_Imagine-000000?style=for-the-badge&logo=x&logoColor=white" height="30" />
+<img src="https://img.shields.io/badge/ComfyUI-FF6B35?style=for-the-badge" height="30" />
 </p>
 
 ### Infrastructure & Tools
@@ -97,7 +106,7 @@ Started coding at age 8 — first app: a Pascal grading tool in 1992. Purdue gra
 | Years | Role | Company | Highlights |
 |:---:|:---|:---|:---|
 | 2025–Now | **Founder** | [Stuart Technologies](https://stuarttech.com) | Relaunched to build better apps & websites with AI-augmented development |
-| 2019–Now | **Senior Frontend Engineer** | Avoya Travel | Nuxt/Vue/Tailwind apps, component libraries, mobile (Quasar/Capacitor), real-time systems. Reduced load times from 10s+ to <1s. |
+| 2019–Now | **Engineering Manager** | Avoya Travel | Leading frontend engineering with Nuxt 4, Vue 3, Tailwind. Built component libraries, mobile apps (Quasar/Capacitor), real-time systems. Reduced load times from 10s+ to <1s. |
 | 2017–2019 | **VP Product & Development** | Hubitat, Inc. | Launched home automation platform, modernized frontend, built Dashboard & Maker API |
 | 2016–2021 | **Founder** | NPSRS, LLC | Custom software for real estate/entertainment, Open-Dash (Node.js dashboards) |
 | 2004–2015 | **COO** | Bureau of Engraving | Led digital transition for $25M business, variable data platforms (ASP.NET/C#) |
@@ -164,14 +173,18 @@ Started coding at age 8 — first app: a Pascal grading tool in 1992. Purdue gra
 
 <br>
 
-## GitHub Stats
+## GitHub Stats & Activity
 
 <div align="center">
 
 ![GitHub followers](https://img.shields.io/github/followers/pstuart?style=for-the-badge&logo=github&labelColor=0d1117&color=58a6ff)
 ![GitHub stars](https://img.shields.io/github/stars/pstuart?style=for-the-badge&logo=github&labelColor=0d1117&color=58a6ff)
 
-| <img src="https://github-readme-stats-sigma-five.vercel.app/api?username=pstuart&show_icons=true&theme=transparent&hide_border=true&title_color=58a6ff&icon_color=58a6ff&text_color=c9d1d9&rank_icon=github" alt="GitHub Stats" /> | <img src="https://github-readme-stats-sigma-five.vercel.app/api/top-langs/?username=pstuart&layout=compact&theme=transparent&hide_border=true&title_color=58a6ff&text_color=c9d1d9&langs_count=8" alt="Top Languages" /> |
+![GitHub Streak](https://streak-stats.demolab.com/?user=pstuart&theme=dark&hide_border=true)
+
+<img src="https://github-readme-activity-graph.vercel.app/graph?username=pstuart&theme=react&hide_border=true&bg_color=0d1117&color=58a6ff&line=58a6ff&point=58a6ff" alt="GitHub Activity Graph" width="100%" />
+
+| <img src="https://github-readme-stats.vercel.app/api?username=pstuart&show_icons=true&theme=transparent&hide_border=true&title_color=58a6ff&icon_color=58a6ff&text_color=c9d1d9&rank_icon=github" alt="GitHub Stats" /> | <img src="https://github-readme-stats.vercel.app/api/top-langs/?username=pstuart&layout=compact&theme=transparent&hide_border=true&title_color=58a6ff&text_color=c9d1d9&langs_count=8" alt="Top Languages" /> |
 |---|---|
 
 </div>

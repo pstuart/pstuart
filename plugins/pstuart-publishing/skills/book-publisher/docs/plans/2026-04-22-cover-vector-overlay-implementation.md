@@ -113,14 +113,14 @@ Each task touches ≤ 5 files (per global phase rule). Violations are plan bugs 
 - Create: `templates/lib/__init__.py`
 - Create: `pytest.ini`
 
-- [ ] **Step 1: Create empty package markers**
+- [x] **Step 1: Create empty package markers**
 
 ```bash
 cd ~/.claude/skills/book-publisher
 touch tests/__init__.py templates/lib/__init__.py
 ```
 
-- [ ] **Step 2: Write pytest configuration**
+- [x] **Step 2: Write pytest configuration**
 
 Create `pytest.ini`:
 
@@ -133,7 +133,7 @@ python_functions = test_*
 addopts = -ra --strict-markers
 ```
 
-- [ ] **Step 3: Write shared pytest fixtures**
+- [x] **Step 3: Write shared pytest fixtures**
 
 Create `tests/conftest.py`:
 
@@ -178,7 +178,7 @@ def placeholder_png(tmp_path: Path) -> Path:
     return p
 ```
 
-- [ ] **Step 4: Verify pytest runs (with zero tests)**
+- [x] **Step 4: Verify pytest runs (with zero tests)**
 
 ```bash
 cd ~/.claude/skills/book-publisher
@@ -187,7 +187,7 @@ python3 -m pytest tests/ -v
 
 Expected: `no tests ran in 0.XXs` — **this confirms pytest is wired up**.
 
-- [ ] **Step 5: Commit**
+- [x] **Step 5: Commit**
 
 ```bash
 git add pytest.ini tests/__init__.py tests/conftest.py templates/lib/__init__.py
@@ -202,7 +202,7 @@ git commit -m "chore: scaffold pytest infrastructure for book-publisher skill"
 - Create: `templates/lib/cover_dimensions.py`
 - Create: `tests/test_cover_dimensions.py`
 
-- [ ] **Step 1: Write failing tests**
+- [x] **Step 1: Write failing tests**
 
 Create `tests/test_cover_dimensions.py`:
 
@@ -254,7 +254,7 @@ def test_panel_offsets_split_wrap_correctly():
     assert offsets["front_end"] == pytest.approx(11.7004, rel=1e-4)
 ```
 
-- [ ] **Step 2: Run tests — confirm they fail**
+- [x] **Step 2: Run tests — confirm they fail**
 
 ```bash
 python3 -m pytest tests/test_cover_dimensions.py -v
@@ -262,7 +262,7 @@ python3 -m pytest tests/test_cover_dimensions.py -v
 
 Expected: `ModuleNotFoundError: No module named 'templates.lib.cover_dimensions'` — 5 errors.
 
-- [ ] **Step 3: Write minimal implementation**
+- [x] **Step 3: Write minimal implementation**
 
 Create `templates/lib/cover_dimensions.py`:
 
@@ -344,7 +344,7 @@ def panel_offsets_inches(
     }
 ```
 
-- [ ] **Step 4: Run tests — confirm they pass**
+- [x] **Step 4: Run tests — confirm they pass**
 
 ```bash
 python3 -m pytest tests/test_cover_dimensions.py -v
@@ -352,7 +352,7 @@ python3 -m pytest tests/test_cover_dimensions.py -v
 
 Expected: 5 passed.
 
-- [ ] **Step 5: Commit**
+- [x] **Step 5: Commit**
 
 ```bash
 git add templates/lib/cover_dimensions.py tests/test_cover_dimensions.py
@@ -367,7 +367,7 @@ git commit -m "feat(cover): add pure dimension math for wrap canvas and panels"
 - Create: `templates/lib/cover_session.py`
 - Create: `tests/test_cover_session.py`
 
-- [ ] **Step 1: Write failing tests**
+- [x] **Step 1: Write failing tests**
 
 Create `tests/test_cover_session.py`:
 
@@ -443,7 +443,7 @@ def test_approve_sets_canonical_fields(tmp_cover_assets: Path):
     assert s.surfaces["kindle"]["approved_prompt"] == "p1"
 ```
 
-- [ ] **Step 2: Run tests — confirm they fail**
+- [x] **Step 2: Run tests — confirm they fail**
 
 ```bash
 python3 -m pytest tests/test_cover_session.py -v
@@ -451,7 +451,7 @@ python3 -m pytest tests/test_cover_session.py -v
 
 Expected: `ModuleNotFoundError` / 5 errors.
 
-- [ ] **Step 3: Write minimal implementation**
+- [x] **Step 3: Write minimal implementation**
 
 Create `templates/lib/cover_session.py`:
 
@@ -547,7 +547,7 @@ def load_session(path: Path) -> CoverSession:
     return CoverSession(**data)
 ```
 
-- [ ] **Step 4: Run tests — confirm they pass**
+- [x] **Step 4: Run tests — confirm they pass**
 
 ```bash
 python3 -m pytest tests/test_cover_session.py -v
@@ -555,7 +555,7 @@ python3 -m pytest tests/test_cover_session.py -v
 
 Expected: 5 passed.
 
-- [ ] **Step 5: Commit**
+- [x] **Step 5: Commit**
 
 ```bash
 git add templates/lib/cover_session.py tests/test_cover_session.py
@@ -570,7 +570,7 @@ git commit -m "feat(cover): add atomic JSON session state with schema versioning
 - Create: `templates/lib/cover_prompts.py`
 - Create: `tests/test_cover_prompts.py`
 
-- [ ] **Step 1: Write failing tests**
+- [x] **Step 1: Write failing tests**
 
 Create `tests/test_cover_prompts.py`:
 
@@ -641,7 +641,7 @@ def test_unknown_palette_raises():
         )
 ```
 
-- [ ] **Step 2: Run tests — confirm they fail**
+- [x] **Step 2: Run tests — confirm they fail**
 
 ```bash
 python3 -m pytest tests/test_cover_prompts.py -v
@@ -649,7 +649,7 @@ python3 -m pytest tests/test_cover_prompts.py -v
 
 Expected: `ModuleNotFoundError`.
 
-- [ ] **Step 3: Write minimal implementation**
+- [x] **Step 3: Write minimal implementation**
 
 Create `templates/lib/cover_prompts.py`:
 
@@ -774,7 +774,7 @@ def build_variants(
     return variants
 ```
 
-- [ ] **Step 4: Run tests — confirm they pass**
+- [x] **Step 4: Run tests — confirm they pass**
 
 ```bash
 python3 -m pytest tests/test_cover_prompts.py -v
@@ -782,7 +782,7 @@ python3 -m pytest tests/test_cover_prompts.py -v
 
 Expected: 5 passed.
 
-- [ ] **Step 5: Commit**
+- [x] **Step 5: Commit**
 
 ```bash
 git add templates/lib/cover_prompts.py tests/test_cover_prompts.py
@@ -797,7 +797,7 @@ git commit -m "feat(cover): add 4-slot prompt builder with wildcard variant"
 - Create: `templates/lib/zgen_runner.py`
 - Create: `tests/test_zgen_runner.py`
 
-- [ ] **Step 1: Write failing tests**
+- [x] **Step 1: Write failing tests**
 
 Create `tests/test_zgen_runner.py`:
 
@@ -874,7 +874,7 @@ def test_missing_output_file_raises(tmp_path: Path, monkeypatch):
         )
 ```
 
-- [ ] **Step 2: Run tests — confirm they fail**
+- [x] **Step 2: Run tests — confirm they fail**
 
 ```bash
 python3 -m pytest tests/test_zgen_runner.py -v
@@ -882,7 +882,7 @@ python3 -m pytest tests/test_zgen_runner.py -v
 
 Expected: `ModuleNotFoundError`.
 
-- [ ] **Step 3: Write minimal implementation**
+- [x] **Step 3: Write minimal implementation**
 
 Create `templates/lib/zgen_runner.py`:
 
@@ -963,7 +963,7 @@ def run_zgen(
     return output
 ```
 
-- [ ] **Step 4: Run tests — confirm they pass**
+- [x] **Step 4: Run tests — confirm they pass**
 
 ```bash
 python3 -m pytest tests/test_zgen_runner.py -v
@@ -971,7 +971,7 @@ python3 -m pytest tests/test_zgen_runner.py -v
 
 Expected: 4 passed.
 
-- [ ] **Step 5: Commit**
+- [x] **Step 5: Commit**
 
 ```bash
 git add templates/lib/zgen_runner.py tests/test_zgen_runner.py
@@ -986,7 +986,7 @@ git commit -m "feat(cover): add zgen subprocess wrapper with serial single-image
 - Create: `templates/lib/cover_text.py`
 - Create: `tests/test_cover_text.py`
 
-- [ ] **Step 1: Write failing tests**
+- [x] **Step 1: Write failing tests**
 
 Create `tests/test_cover_text.py`:
 
@@ -1048,7 +1048,7 @@ def test_spine_text_survives_when_spine_wide_enough(tmp_path: Path):
     assert "SAMPLE TITLE" in _extract_text(out)
 ```
 
-- [ ] **Step 2: Run tests — confirm they fail**
+- [x] **Step 2: Run tests — confirm they fail**
 
 ```bash
 python3 -m pytest tests/test_cover_text.py -v
@@ -1056,7 +1056,7 @@ python3 -m pytest tests/test_cover_text.py -v
 
 Expected: `ModuleNotFoundError`.
 
-- [ ] **Step 3: Write minimal implementation**
+- [x] **Step 3: Write minimal implementation**
 
 Create `templates/lib/cover_text.py`:
 
@@ -1140,7 +1140,7 @@ def draw_spine_text(
         pdf.text(spine_center_x, start_y, text)
 ```
 
-- [ ] **Step 4: Run tests — confirm they pass**
+- [x] **Step 4: Run tests — confirm they pass**
 
 ```bash
 python3 -m pytest tests/test_cover_text.py -v
@@ -1148,7 +1148,7 @@ python3 -m pytest tests/test_cover_text.py -v
 
 Expected: 3 passed.
 
-- [ ] **Step 5: Commit**
+- [x] **Step 5: Commit**
 
 ```bash
 git add templates/lib/cover_text.py tests/test_cover_text.py
@@ -1164,7 +1164,7 @@ git commit -m "feat(cover): add fpdf2 vector text helpers (centered/block/spine)
 - Create: `tests/test_compose_paperback_wrap.py`
 - Use: `templates/fixtures/sample_book/cover-assets/wrap_art.png` (will create in Task 14)
 
-- [ ] **Step 1: Write failing integration test**
+- [x] **Step 1: Write failing integration test**
 
 Create `tests/test_compose_paperback_wrap.py`:
 
@@ -1222,7 +1222,7 @@ def test_compose_wrap_raises_when_page_count_missing(tmp_path: Path, sample_book
         )
 ```
 
-- [ ] **Step 2: Run tests — confirm they fail**
+- [x] **Step 2: Run tests — confirm they fail**
 
 ```bash
 python3 -m pytest tests/test_compose_paperback_wrap.py -v
@@ -1230,7 +1230,7 @@ python3 -m pytest tests/test_compose_paperback_wrap.py -v
 
 Expected: `ModuleNotFoundError`.
 
-- [ ] **Step 3: Write the compose template**
+- [x] **Step 3: Write the compose template**
 
 Create `templates/compose_paperback_wrap_template.py`:
 
@@ -1375,7 +1375,7 @@ if __name__ == "__main__":
     print(f"Wrote {assets / 'paperback_wrap.pdf'}")
 ```
 
-- [ ] **Step 4: Run tests — confirm they pass**
+- [x] **Step 4: Run tests — confirm they pass**
 
 ```bash
 python3 -m pytest tests/test_compose_paperback_wrap.py -v
@@ -1383,7 +1383,7 @@ python3 -m pytest tests/test_compose_paperback_wrap.py -v
 
 Expected: 2 passed.
 
-- [ ] **Step 5: Commit**
+- [x] **Step 5: Commit**
 
 ```bash
 git add templates/compose_paperback_wrap_template.py tests/test_compose_paperback_wrap.py
@@ -1398,7 +1398,7 @@ git commit -m "feat(cover): add paperback wrap composer with vector text overlay
 - Create: `templates/compose_kindle_cover_template.py`
 - Create: `tests/test_compose_kindle_cover.py`
 
-- [ ] **Step 1: Write failing integration test**
+- [x] **Step 1: Write failing integration test**
 
 Create `tests/test_compose_kindle_cover.py`:
 
@@ -1432,13 +1432,13 @@ def test_compose_kindle_produces_1600x2560_jpeg(tmp_path: Path, sample_book_conf
         assert img.mode == "RGB"
 ```
 
-- [ ] **Step 2: Run tests — confirm they fail**
+- [x] **Step 2: Run tests — confirm they fail**
 
 ```bash
 python3 -m pytest tests/test_compose_kindle_cover.py -v
 ```
 
-- [ ] **Step 3: Write the compose template**
+- [x] **Step 3: Write the compose template**
 
 Create `templates/compose_kindle_cover_template.py`:
 
@@ -1528,7 +1528,7 @@ if __name__ == "__main__":
     print(f"Wrote {assets / 'kindle_cover.jpg'}")
 ```
 
-- [ ] **Step 4: Run tests — confirm they pass**
+- [x] **Step 4: Run tests — confirm they pass**
 
 ```bash
 python3 -m pytest tests/test_compose_kindle_cover.py -v
@@ -1536,7 +1536,7 @@ python3 -m pytest tests/test_compose_kindle_cover.py -v
 
 Expected: 1 passed.
 
-- [ ] **Step 5: Commit**
+- [x] **Step 5: Commit**
 
 ```bash
 git add templates/compose_kindle_cover_template.py tests/test_compose_kindle_cover.py
@@ -1551,7 +1551,7 @@ git commit -m "feat(cover): add Kindle JPEG composer via PDF→raster pipeline"
 - Create: `templates/compose_interior_art_template.py`
 - Create: `tests/test_compose_interior_art.py`
 
-- [ ] **Step 1: Write failing test**
+- [x] **Step 1: Write failing test**
 
 Create `tests/test_compose_interior_art.py`:
 
@@ -1580,13 +1580,13 @@ def test_stage_motif_copies_and_resizes(tmp_path: Path):
         assert img.size == (1650, 2550)
 ```
 
-- [ ] **Step 2: Run tests — confirm they fail**
+- [x] **Step 2: Run tests — confirm they fail**
 
 ```bash
 python3 -m pytest tests/test_compose_interior_art.py -v
 ```
 
-- [ ] **Step 3: Write the template**
+- [x] **Step 3: Write the template**
 
 Create `templates/compose_interior_art_template.py`:
 
@@ -1638,7 +1638,7 @@ if __name__ == "__main__":
     print(f"Staged motif to {out}")
 ```
 
-- [ ] **Step 4: Run tests — confirm they pass**
+- [x] **Step 4: Run tests — confirm they pass**
 
 ```bash
 python3 -m pytest tests/test_compose_interior_art.py -v
@@ -1646,7 +1646,7 @@ python3 -m pytest tests/test_compose_interior_art.py -v
 
 Expected: 1 passed.
 
-- [ ] **Step 5: Commit**
+- [x] **Step 5: Commit**
 
 ```bash
 git add templates/compose_interior_art_template.py tests/test_compose_interior_art.py
@@ -1662,7 +1662,7 @@ git commit -m "feat(cover): add chapter motif staging script"
 
 **Note:** This is the interactive script. No unit tests for the UX loop itself — we test the primitives (prompt builder, zgen runner, session state) that it composes. Smoke-test by dry-running against a mocked zgen.
 
-- [ ] **Step 1: Write the creative-loop script**
+- [x] **Step 1: Write the creative-loop script**
 
 Create `templates/generate_cover_art_template.py`:
 
@@ -1868,7 +1868,7 @@ if __name__ == "__main__":
     generate_cover_art(book_config=BOOK_CONFIG, assets_dir=project / "cover-assets")
 ```
 
-- [ ] **Step 2: Smoke-check the file imports**
+- [x] **Step 2: Smoke-check the file imports**
 
 ```bash
 cd ~/.claude/skills/book-publisher/templates
@@ -1877,7 +1877,7 @@ python3 -c "import generate_cover_art_template; print('OK')"
 
 Expected: `OK` (imports succeed, no NameError).
 
-- [ ] **Step 3: Commit**
+- [x] **Step 3: Commit**
 
 ```bash
 git add templates/generate_cover_art_template.py
@@ -1893,7 +1893,7 @@ git commit -m "feat(cover): add interactive cover-art generation loop"
 
 The existing generate_pdf_template.py has a chapter-opener render path. We add an opt-in branch that checks for `assets/chapter_motif.png` and, when present, renders it as a top-half banner before the chapter number and title.
 
-- [ ] **Step 1: Locate the chapter-opener function**
+- [x] **Step 1: Locate the chapter-opener function**
 
 ```bash
 grep -n "def _render_chapter\|def render_chapter\|chapter_start" templates/generate_pdf_template.py | head
@@ -1901,7 +1901,7 @@ grep -n "def _render_chapter\|def render_chapter\|chapter_start" templates/gener
 
 Identify the function that starts a new chapter page (likely around a method that calls `add_page()` and then renders the chapter number/title).
 
-- [ ] **Step 2: Add motif rendering helper**
+- [x] **Step 2: Add motif rendering helper**
 
 Inside `generate_pdf_template.py`, near other render helpers, add:
 
@@ -1925,7 +1925,7 @@ def _render_chapter_motif_if_present(self, chapter_num: int, chapter_title: str)
     return True
 ```
 
-- [ ] **Step 3: Wire the helper into the chapter-opener flow**
+- [x] **Step 3: Wire the helper into the chapter-opener flow**
 
 Find the existing chapter-opener render logic (where chapter number + title are drawn). Replace the first lines of that render block with:
 
@@ -1938,7 +1938,7 @@ motif_rendered = self._render_chapter_motif_if_present(chapter_num, chapter_titl
 
 Exact placement: immediately after `self.add_page()` for chapter starts, before the existing `self.set_font(...)` / chapter-number draw calls.
 
-- [ ] **Step 4: Manual smoke test**
+- [x] **Step 4: Manual smoke test**
 
 Run the existing test suite to confirm non-motif path still works:
 
@@ -1951,7 +1951,7 @@ python3 -m pytest tests/ -v
 
 Expected: all tests pass; no regressions.
 
-- [ ] **Step 5: Commit**
+- [x] **Step 5: Commit**
 
 ```bash
 git add templates/generate_pdf_template.py
@@ -1967,7 +1967,7 @@ git commit -m "feat(pdf): optional chapter-opener motif banner from assets/"
 
 Current behavior: reads `paperback_cover_clean.png` and crops to front/back panels as images. New behavior: reads `cover-assets/paperback_wrap.pdf` via pypdf and extracts the front and back pages as vector PDF pages.
 
-- [ ] **Step 1: Read current implementation**
+- [x] **Step 1: Read current implementation**
 
 ```bash
 less templates/add_covers_to_pdf_template.py
@@ -1975,7 +1975,7 @@ less templates/add_covers_to_pdf_template.py
 
 Identify the function that opens the wrap image and crops panels — this is the section to replace.
 
-- [ ] **Step 2: Rewrite the extraction logic**
+- [x] **Step 2: Rewrite the extraction logic**
 
 Replace the PNG-based extraction with pypdf-based page splitting. The paperback_wrap.pdf is a single-page wide PDF; to "extract front" we crop that single page to the front panel's coordinate box and save as its own PDF page.
 
@@ -2029,7 +2029,7 @@ def _extract_panel_as_pdf(
     return out
 ```
 
-- [ ] **Step 3: Update the main add_covers function**
+- [x] **Step 3: Update the main add_covers function**
 
 Replace the existing front/back PNG extraction with PDF-based extraction. The main function should now:
 
@@ -2060,7 +2060,7 @@ def add_covers_to_pdf(
     return output
 ```
 
-- [ ] **Step 4: Update the `if __name__ == "__main__":` block**
+- [x] **Step 4: Update the `if __name__ == "__main__":` block**
 
 ```python
 if __name__ == "__main__":
@@ -2085,7 +2085,7 @@ if __name__ == "__main__":
     print(f"Wrote {out}")
 ```
 
-- [ ] **Step 5: Smoke test**
+- [x] **Step 5: Smoke test**
 
 ```bash
 python3 -c "from templates.add_covers_to_pdf_template import add_covers_to_pdf, _extract_panel_as_pdf; print('OK')"
@@ -2093,7 +2093,7 @@ python3 -c "from templates.add_covers_to_pdf_template import add_covers_to_pdf, 
 
 Expected: `OK`.
 
-- [ ] **Step 6: Commit**
+- [x] **Step 6: Commit**
 
 ```bash
 git add templates/add_covers_to_pdf_template.py
@@ -2109,13 +2109,13 @@ git commit -m "feat(cover): add_covers now reads paperback_wrap.pdf with vector 
 
 Current behavior: looks for `kindle_cover.png` or generates its own via Pillow. New behavior: reads the canonical `cover-assets/kindle_cover.jpg`.
 
-- [ ] **Step 1: Locate cover-image reference**
+- [x] **Step 1: Locate cover-image reference**
 
 ```bash
 grep -n "kindle_cover\|set_cover\|cover.jpg\|cover.png" templates/generate_epub_template.py
 ```
 
-- [ ] **Step 2: Change cover path to canonical Kindle JPEG**
+- [x] **Step 2: Change cover path to canonical Kindle JPEG**
 
 Replace the existing cover-image path resolution (whichever form it takes) with:
 
@@ -2130,11 +2130,11 @@ if not cover_path.exists():
 
 Then pass `cover_path` to the existing `book.set_cover(...)` call (or equivalent).
 
-- [ ] **Step 3: Remove any fallback Pillow cover generation**
+- [x] **Step 3: Remove any fallback Pillow cover generation**
 
 If the template has fallback code that renders a PNG cover with Pillow when `kindle_cover.jpg` is missing, delete it. Clean break per spec.
 
-- [ ] **Step 4: Smoke test**
+- [x] **Step 4: Smoke test**
 
 ```bash
 python3 -c "import ast; ast.parse(open('templates/generate_epub_template.py').read()); print('OK')"
@@ -2142,7 +2142,7 @@ python3 -c "import ast; ast.parse(open('templates/generate_epub_template.py').re
 
 Expected: `OK`.
 
-- [ ] **Step 5: Commit**
+- [x] **Step 5: Commit**
 
 ```bash
 git add templates/generate_epub_template.py
@@ -2161,7 +2161,7 @@ git commit -m "feat(epub): use canonical cover-assets/kindle_cover.jpg for EPUB 
 - Delete: `templates/create_paperback_cover_template.py`
 - Delete: `templates/create_kindle_cover_template.py`
 
-- [ ] **Step 1: Create fixture BOOK_CONFIG**
+- [x] **Step 1: Create fixture BOOK_CONFIG**
 
 Create `templates/fixtures/sample_book/BOOK_CONFIG.py`:
 
@@ -2186,7 +2186,7 @@ BOOK_CONFIG = {
 }
 ```
 
-- [ ] **Step 2: Generate tiny placeholder PNGs**
+- [x] **Step 2: Generate tiny placeholder PNGs**
 
 ```bash
 cd ~/.claude/skills/book-publisher/templates/fixtures/sample_book
@@ -2200,7 +2200,7 @@ print('fixture PNGs created')
 "
 ```
 
-- [ ] **Step 3: End-to-end fixture smoke test**
+- [x] **Step 3: End-to-end fixture smoke test**
 
 ```bash
 cd ~/.claude/skills/book-publisher/templates
@@ -2223,14 +2223,14 @@ print(f'OK: {out_wrap.exists()} {out_kindle.exists()} {out_motif.exists()}')
 
 Expected: `OK: True True True`.
 
-- [ ] **Step 4: Delete old templates**
+- [x] **Step 4: Delete old templates**
 
 ```bash
 cd ~/.claude/skills/book-publisher/templates
 rm create_paperback_cover_template.py create_kindle_cover_template.py
 ```
 
-- [ ] **Step 5: Add fixture output to .gitignore**
+- [x] **Step 5: Add fixture output to .gitignore**
 
 Create or append `~/.claude/skills/book-publisher/.gitignore`:
 
@@ -2243,7 +2243,7 @@ __pycache__/
 .pytest_cache/
 ```
 
-- [ ] **Step 6: Commit**
+- [x] **Step 6: Commit**
 
 ```bash
 git add templates/fixtures/ .gitignore
@@ -2259,7 +2259,7 @@ git commit -m "chore(cover): add fixture sample_book, delete old flat-color temp
 - Modify: `SKILL.md`
 - Modify: `references/cover-generation.md`
 
-- [ ] **Step 1: Rewrite the "Cover Generation" section of SKILL.md**
+- [x] **Step 1: Rewrite the "Cover Generation" section of SKILL.md**
 
 Locate the `## Cover Generation` section in `SKILL.md` (currently around line 458 per spec). Replace its entire contents (from the section header through end of "Spine Width Calculation") with:
 
@@ -2319,7 +2319,7 @@ pdftotext cover-assets/paperback_wrap.pdf -
 Zoom paperback_wrap.pdf to 400% in Preview — title text must stay crisp. If pixelated, composition went wrong.
 ```
 
-- [ ] **Step 2: Update the "Quick Start" section of SKILL.md**
+- [x] **Step 2: Update the "Quick Start" section of SKILL.md**
 
 Replace the existing cover-related commands (steps 6-7 in the Quick Start block) with:
 
@@ -2336,22 +2336,22 @@ python3 compose_interior_art.py   # optional — only if you want chapter motif
 python3 add_covers_to_pdf.py
 ```
 
-- [ ] **Step 3: Update the Validation Checklist section**
+- [x] **Step 3: Update the Validation Checklist section**
 
 In `SKILL.md`'s Validation Checklist, replace the existing "Cover & Layout" block with:
 
 ```markdown
 ### Cover & Layout
-- [ ] Open paperback_wrap.pdf in Preview — zoom to 400%, title text stays crisp (proves vector, not raster)
-- [ ] Extract text via `pdftotext paperback_wrap.pdf -` — title and author appear
-- [ ] Open kindle_cover.jpg at 100% — title readable, no JPEG artifacts on text edges
-- [ ] Spine text reads correctly (if spine ≥ 0.0625")
-- [ ] Chapter motif renders on every chapter opener (if chapter_motif.png exists in assets/)
-- [ ] Bleed extends full 0.125" on all edges of paperback_wrap.pdf
-- [ ] Images are 300 DPI minimum
+- [x] Open paperback_wrap.pdf in Preview — zoom to 400%, title text stays crisp (proves vector, not raster)
+- [x] Extract text via `pdftotext paperback_wrap.pdf -` — title and author appear
+- [x] Open kindle_cover.jpg at 100% — title readable, no JPEG artifacts on text edges
+- [x] Spine text reads correctly (if spine ≥ 0.0625")
+- [x] Chapter motif renders on every chapter opener (if chapter_motif.png exists in assets/)
+- [x] Bleed extends full 0.125" on all edges of paperback_wrap.pdf
+- [x] Images are 300 DPI minimum
 ```
 
-- [ ] **Step 4: Rewrite references/cover-generation.md**
+- [x] **Step 4: Rewrite references/cover-generation.md**
 
 Overwrite `references/cover-generation.md` entirely with:
 
@@ -2420,7 +2420,7 @@ pdftotext cover-assets/paperback_wrap.pdf -
 Title and author **must** appear in the output. If they don't, text was rasterized somewhere it shouldn't have been.
 ```
 
-- [ ] **Step 5: Commit**
+- [x] **Step 5: Commit**
 
 ```bash
 git add SKILL.md references/cover-generation.md

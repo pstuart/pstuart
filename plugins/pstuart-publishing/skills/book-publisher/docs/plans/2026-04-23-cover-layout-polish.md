@@ -31,7 +31,7 @@ Each task extracts one concern into its own `lib/` module with tests.
 - Create: `templates/lib/fonts/README.md` (attribution + version)
 - Modify: `SKILL.md` (add `python-barcode` to dep list)
 
-- [ ] **Step 1: Download EB Garamond from Google Fonts**
+- [x] **Step 1: Download EB Garamond from Google Fonts**
 
 ```bash
 cd templates/lib/fonts
@@ -48,7 +48,7 @@ ls -la
 
 Expected: 4 TTFs (~400KB each), OFL.txt.
 
-- [ ] **Step 2: Add attribution README**
+- [x] **Step 2: Add attribution README**
 
 Create `templates/lib/fonts/README.md`:
 
@@ -64,7 +64,7 @@ Used for vector text rendering in book covers. Chosen for:
 - Italic + bold variants for back-cover hierarchy
 ```
 
-- [ ] **Step 3: Commit**
+- [x] **Step 3: Commit**
 
 ```bash
 git add templates/lib/fonts/

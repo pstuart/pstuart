@@ -1,97 +1,90 @@
 ---
 name: swift-test-scaffold
-description: Generates Swift Testing framework boilerplate for ViewModels, Services, and Models. Use when adding tests to existing code or setting up test targets.
+description: Use when adding Swift tests, creating test targets, scaffolding ViewModel or service tests, or choosing Swift Testing over XCTest.
 ---
 
 # Swift Test Scaffold
 
-Generate test boilerplate using the Swift Testing framework (`@Test`, `@Suite`, `#expect`).
+Generate Swift Testing structure that verifies intent, not only surface behavior.
 
-## When to Use
+## Non-negotiables
 
-- "Add tests for this ViewModel"
-- "Set up test target"
-- "Generate test stubs"
+| ALWAYS | NEVER |
+|--------|--------|
+| `import Testing` for new tests | New XCTest cases |
+| Descriptive `@Test("...")` names | Tests that cannot fail when logic changes |
+| Mock at protocol/service boundary | Hit live network in unit tests |
+| Cover success + failure paths for logic | Test trivial getters / SwiftUI layout trees |
 
-## Test Structure
+## Structure
+
+```
+Tests/YourAppTests/
+├── ViewModels/
+├── Services/
+├── Models/
+└── Mocks/
+```
+
+## Core pattern
 
 ```swift
 import Testing
-@testable import MyApp
+@testable import YourApp
 
-@Suite("FeatureViewModel Tests")
+@Suite("FeatureViewModel")
 struct FeatureViewModelTests {
-    
-    // Shared setup
-    let sut: FeatureViewModel
-    
-    init() {
-        sut = FeatureViewModel(service: MockService())
+    private func makeSUT(service: MockFeatureService = .init()) -> FeatureViewModel {
+        FeatureViewModel(service: service)
     }
-    
-    @Test("initial state is correct")
-    func initialState() {
-        #expect(sut.items.isEmpty)
-        #expect(!sut.isLoading)
-        #expect(sut.errorMessage == nil)
+
+    @Test("load populates items on success")
+    func loadSuccess() async {
+        let service = MockFeatureService()
+        service.itemsToReturn = [Item(name: "A")]
+        let sut = makeSUT(service: service)
+        await sut.loadItems()
+        #expect(sut.items.count == 1)
     }
-    
-    @Test("loads data successfully")
-    func loadData() async {
-        await sut.load()
-        #expect(sut.items.count > 0)
-    }
-    
-    @Test("handles error gracefully")
-    func handleError() async {
-        let sut = FeatureViewModel(service: FailingMockService())
-        await sut.load()
-        #expect(sut.errorMessage != nil)
-    }
-    
-    @Test("parameterized test", arguments: ["a", "b", "c"])
-    func validateInput(_ input: String) {
-        #expect(!input.isEmpty)
+
+    @Test("load records error on failure")
+    func loadFailure() async {
+        let service = MockFeatureService()
+        service.errorToThrow = TestError.boom
+        let sut = makeSUT(service: service)
+        await sut.loadItems()
+        #expect(sut.error != nil)
     }
 }
 ```
-
-## Mock Pattern
 
 ```swift
-// Protocol for dependency injection
-protocol ServiceProtocol: Sendable {
-    func fetch() async throws -> [Item]
-}
+final class MockFeatureService: FeatureServiceProtocol, @unchecked Sendable {
+    var itemsToReturn: [Item] = []
+    var errorToThrow: Error?
 
-// Production implementation
-struct RealService: ServiceProtocol {
-    func fetch() async throws -> [Item] { ... }
-}
-
-// Test mock
-struct MockService: ServiceProtocol {
-    var items: [Item] = [.sample, .sample2]
-    func fetch() async throws -> [Item] { items }
-}
-
-struct FailingMockService: ServiceProtocol {
-    func fetch() async throws -> [Item] {
-        throw URLError(.notConnectedToInternet)
+    func fetchItems() async throws -> [Item] {
+        if let errorToThrow { throw errorToThrow }
+        return itemsToReturn
     }
 }
 ```
 
-## What to Test
+## Decision tree
 
-- **ViewModels**: State transitions, async loading, error handling
-- **Services**: API response parsing, error mapping, caching logic
-- **Models**: Computed properties, validation, Codable conformance
-- **Algorithms**: Business logic, calculations, transformations
+- Business rule / state machine? → test it
+- Type system already enforces? → skip
+- UI layout only? → skip unit test; use accessibility/manual
 
-## What NOT to Test
+## Quick commands
 
-- SwiftUI view layout (use previews instead)
-- Trivial getters/setters
-- Framework behavior (trust Apple's code)
-- Private implementation details
+```bash
+swift test
+# or Xcode Test
+```
+
+## Pre-finish checklist
+
+- [ ] Swift Testing only for new files
+- [ ] Mocks for dependencies
+- [ ] At least one failure-path test for async logic

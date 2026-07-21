@@ -1,63 +1,62 @@
 ---
 name: nuxt4-frontend
-description: Expert guidance for Nuxt 4 projects with app/ directory structure, Vue 3 Composition API, TypeScript, Vitest, ESLint, and Tailwind CSS 4. Use when creating components, composables, tests, or any frontend code.
+description: Use when building or reviewing Nuxt 4 apps, app/ directory layout, pages, layouts, server routes, composables, layers, or Nuxt data fetching.
 ---
 
-# Nuxt 4 Frontend Guide
+# Nuxt 4 Frontend
 
-## Project Structure
+**Baseline:** Nuxt 4.4.x, the `app/` directory, Tailwind 4, and strict TypeScript. Follow the repository's existing package manager and lockfile.
+
+## Non-negotiables
+
+| ALWAYS | NEVER |
+|--------|--------|
+| Put app code under `app/` | Root-level `pages/` / `components/` for new Nuxt 4 apps |
+| Use the package manager selected by the repository | Introduce a second lockfile |
+| Tailwind utilities only | Inline styles / `<style scoped>` |
+| Type fetch results | Mock API payloads on failure |
+| ESLint `@nuxt/eslint` | Ship without lint script |
+
+## Project structure
 
 ```
 app/
-  components/       # Auto-imported Vue components
-  composables/      # Auto-imported composables (use*.ts)
-  layouts/          # Layout components
-  middleware/       # Route middleware
-  pages/            # File-based routing
-  plugins/          # Nuxt plugins
-  utils/            # Auto-imported utility functions
-server/
-  api/              # Server API routes
-  middleware/       # Server middleware
-  utils/            # Server utilities
-public/             # Static assets
+├── components/
+├── composables/
+├── utils/
+├── types/
+├── pages/
+├── layouts/
+├── middleware/
+├── plugins/
+└── assets/css/main.css
+server/                 # API routes (root)
+layers/                 # optional shared layers
+nuxt.config.ts
 ```
 
-## Component Pattern
+## Decision tree
+
+- Simple GET tied to route? → `useFetch`
+- Complex key / transform / lazy? → `useAsyncData`
+- Shared UI across sites? → Nuxt layer or a focused shared package
+- Styling? → `tailwindcss4` skill
+- Types? → `typescript-strict` skill
+- Lint/test gates? → `web-quality` skill
+
+## Core patterns
 
 ```vue
 <script setup lang="ts">
-interface Props {
-  title: string
-  items: Item[]
-  isLoading?: boolean
-}
-
-const props = withDefaults(defineProps<Props>(), {
-  isLoading: false,
-})
-
-const emit = defineEmits<{
-  select: [item: Item]
-  delete: [id: string]
-}>()
+const { data, error, pending } = await useFetch<Item[]>('/api/items')
 </script>
 
 <template>
-  <div class="rounded-lg bg-white p-6 shadow-sm dark:bg-gray-800">
-    <h2 class="text-lg font-semibold text-gray-900 dark:text-white">
-      {{ title }}
-    </h2>
-    <div v-if="isLoading" class="flex items-center justify-center py-8">
-      <div class="h-8 w-8 animate-spin rounded-full border-4 border-blue-500 border-t-transparent" />
-    </div>
-    <ul v-else class="mt-4 divide-y divide-gray-200 dark:divide-gray-700">
-      <li
-        v-for="item in items"
-        :key="item.id"
-        class="cursor-pointer px-2 py-3 transition-colors hover:bg-gray-50 dark:hover:bg-gray-700"
-        @click="emit('select', item)"
-      >
+  <div class="p-6">
+    <p v-if="pending" class="text-slate-500">Loading…</p>
+    <p v-else-if="error" class="text-red-600">Failed to load</p>
+    <ul v-else class="space-y-2">
+      <li v-for="item in data" :key="item.id" class="rounded-lg border p-3">
         {{ item.name }}
       </li>
     </ul>
@@ -65,101 +64,45 @@ const emit = defineEmits<{
 </template>
 ```
 
-## Composable Pattern
-
-```typescript
-// composables/useItems.ts
-export function useItems() {
-  const items = ref<Item[]>([])
-  const isLoading = ref(false)
-  const error = ref<string | null>(null)
-
-  async function fetchItems() {
-    isLoading.value = true
-    error.value = null
-    try {
-      const data = await $fetch<Item[]>('/api/items')
-      items.value = data
-    } catch (e) {
-      error.value = e instanceof Error ? e.message : 'Failed to fetch items'
-    } finally {
-      isLoading.value = false
-    }
-  }
-
-  return { items, isLoading, error, fetchItems }
-}
-```
-
-## Server API Pattern
-
-```typescript
-// server/api/items/[id].get.ts
-export default defineEventHandler(async (event) => {
-  const id = getRouterParam(event, 'id')
-  if (!id) {
-    throw createError({ statusCode: 400, message: 'Missing item ID' })
-  }
-
-  const item = await getItemById(id)
-  if (!item) {
-    throw createError({ statusCode: 404, message: 'Item not found' })
-  }
-
-  return item
+```ts
+// server/api/items.get.ts
+export default defineEventHandler(async () => {
+  // real data source — no fake arrays for “happy path demos” in production code
+  return await listItems()
 })
 ```
 
-## Tailwind CSS 4
+## Quick commands
 
-Tailwind 4 uses CSS-based configuration via `@tailwindcss/vite`:
-
-```typescript
-// nuxt.config.ts
-export default defineNuxtConfig({
-  css: ['~/assets/css/main.css'],
-  vite: {
-    plugins: [tailwindcss()],
-  },
-})
+```bash
+bun run dev
+bun run typecheck
+bun run lint
+bun run lint:fix
+bun run test
+bun run build
 ```
 
-```css
-/* assets/css/main.css */
-@import 'tailwindcss';
+## Load next
 
-@theme {
-  --color-primary: #3b82f6;
-  --color-primary-dark: #2563eb;
-}
-```
+| When | Read |
+|------|------|
+| Vue component patterns | `vue3-composition` |
+| CSS | `tailwindcss4` |
+| ESLint / Vitest / Playwright | `web-quality` |
+| Deploy failures | harness `deployment-doctor` (not this pack) |
 
-## Testing with Vitest
+## Common mistakes
 
-```typescript
-// tests/composables/useItems.test.ts
-import { describe, it, expect, vi } from 'vitest'
-import { useItems } from '~/composables/useItems'
+| Excuse | Reality |
+|--------|---------|
+| "Pages at repo root is fine" | Nuxt 4 convention is `app/` |
+| "I'll use a different package manager locally" | Match the checked-in lockfile and repository tooling |
+| "Placeholder items for UI" | Use empty/error states |
 
-describe('useItems', () => {
-  it('fetches items successfully', async () => {
-    vi.stubGlobal('$fetch', vi.fn().mockResolvedValue([
-      { id: '1', name: 'Item 1' },
-    ]))
+## Pre-finish checklist
 
-    const { items, fetchItems, isLoading } = useItems()
-    await fetchItems()
-
-    expect(items.value).toHaveLength(1)
-    expect(isLoading.value).toBe(false)
-  })
-})
-```
-
-## Rules
-
-- **Tailwind only** — no `<style>` blocks, no inline styles
-- **TypeScript strict** — no `any` types
-- **Composition API** — always `<script setup lang="ts">`
-- **Auto-imports** — don't manually import Vue/Nuxt composables
-- **$fetch** — use Nuxt's `$fetch` instead of raw `fetch`
+- [ ] Files under `app/` (or `server/`)
+- [ ] Tailwind-only styling
+- [ ] Typed data fetching; real error UI
+- [ ] lint/typecheck considered

@@ -1,176 +1,98 @@
 ---
 name: swift-modern-architecture
-description: Guide for building iOS apps using Swift 6, iOS 17+, SwiftUI, SwiftData, and modern concurrency patterns. Use when writing Swift/iOS code, designing app architecture, or modernizing legacy patterns.
+description: Use when writing Swift or SwiftUI code, designing iOS/macOS architecture, modernizing legacy patterns, or choosing ViewModels, SwiftData, navigation, or concurrency APIs.
 ---
 
-# Swift Modern Architecture Guide
+# Swift Modern Architecture
 
-## Core Architecture: MVVM with @Observable
+**Baseline:** Swift 6.2, SwiftUI, Observation, SwiftData, and Swift Testing. Confirm deployment targets against the project requirements.
 
-Every SwiftUI app should follow this pattern:
+## Non-negotiables
 
-### ViewModel Pattern
+| ALWAYS | NEVER |
+|--------|--------|
+| `@Observable` ViewModels | `ObservableObject` / `@Published` / `@StateObject` |
+| `async/await`, `actor`, `@MainActor` | `DispatchQueue.main` for UI work |
+| `NavigationStack` / `NavigationSplitView` | `NavigationView` |
+| SwiftData `@Model` / `@Query` | Core Data for new code |
+| Swift Testing for new tests | XCTest for new tests |
+| Strict concurrency | Completion handlers when async exists |
+
+## Decision tree
+
+- Need state? → `@Observable` + `@State` / `@Environment`
+- Shared mutable service? → `actor`
+- Persistence? → SwiftData
+- Network? → actor API client + async
+- Navigation? → `NavigationStack` + typed destinations
+- Reusable code across targets? → Extract a focused package or module with a documented API
+
+## Core patterns
 
 ```swift
-import SwiftUI
-
 @Observable
-class FeatureViewModel {
-    var items: [Item] = []
-    var isLoading = false
-    var errorMessage: String?
+final class ItemsViewModel {
+    private let service: ItemsService
+    private(set) var items: [Item] = []
+    private(set) var isLoading = false
 
-    private let service: ItemService
-
-    init(service: ItemService = .shared) {
+    init(service: ItemsService) {
         self.service = service
     }
 
-    func loadItems() async {
+    func load() async {
         isLoading = true
         defer { isLoading = false }
-
-        do {
-            items = try await service.fetchItems()
-        } catch {
-            errorMessage = error.localizedDescription
-        }
+        items = (try? await service.fetchItems()) ?? []
     }
 }
-```
 
-### View Pattern
-
-```swift
-struct FeatureView: View {
-    @State private var viewModel = FeatureViewModel()
+struct ItemsView: View {
+    @State private var viewModel: ItemsViewModel
 
     var body: some View {
-        NavigationStack {
-            List(viewModel.items) { item in
-                ItemRow(item: item)
-            }
-            .overlay {
-                if viewModel.isLoading {
-                    ProgressView()
-                }
-            }
-            .task {
-                await viewModel.loadItems()
-            }
+        List(viewModel.items) { item in
+            Text(item.name)
         }
+        .task { await viewModel.load() }
     }
 }
 ```
-
-## Navigation
-
-Always use `NavigationStack` with typed paths:
 
 ```swift
-@Observable
-class Router {
-    var path = NavigationPath()
-
-    func navigate(to destination: AppDestination) {
-        path.append(destination)
-    }
-
-    func popToRoot() {
-        path = NavigationPath()
-    }
-}
-
-enum AppDestination: Hashable {
-    case detail(Item)
-    case settings
-    case profile(User)
-}
-```
-
-## Data Persistence with SwiftData
-
-```swift
-@Model
-class Item {
-    var name: String
-    var createdAt: Date
-    var isCompleted: Bool
-
-    init(name: String) {
-        self.name = name
-        self.createdAt = .now
-        self.isCompleted = false
+actor ItemsService {
+    func fetchItems() async throws -> [Item] {
+        let (data, _) = try await URLSession.shared.data(from: endpoint)
+        return try JSONDecoder().decode([Item].self, from: data)
     }
 }
 ```
 
-## Concurrency
-
-All async work uses structured concurrency:
-
-```swift
-// Task groups for parallel work
-await withTaskGroup(of: Result.self) { group in
-    for url in urls {
-        group.addTask { await fetch(url) }
-    }
-    for await result in group {
-        process(result)
-    }
-}
-
-// MainActor for UI updates
-@MainActor
-func updateUI() {
-    // Safe to update UI state here
-}
-
-// Actor for thread-safe state
-actor DataStore {
-    private var cache: [String: Data] = [:]
-
-    func store(_ data: Data, for key: String) {
-        cache[key] = data
-    }
-}
-```
-
-## Forbidden Patterns Reference
-
-| Deprecated | Modern Replacement |
-|-----------|-------------------|
-| `ObservableObject` | `@Observable` macro |
-| `@Published` | Direct properties on `@Observable` class |
-| `@StateObject` | `@State` with `@Observable` |
-| `@ObservedObject` | Pass directly or `@Environment` |
-| `@EnvironmentObject` | `@Environment(Type.self)` |
-| `DispatchQueue.main` | `@MainActor` or `MainActor.run` |
-| `NavigationView` | `NavigationStack` / `NavigationSplitView` |
-| `Core Data` | `SwiftData` |
-| `XCTest` (new tests) | Swift Testing (`@Test`, `@Suite`, `#expect`) |
-| Completion handlers | `async/await` |
-
-## Testing with Swift Testing
+## Testing
 
 ```swift
 import Testing
 
-@Suite("ItemViewModel Tests")
-struct ItemViewModelTests {
-    @Test("loads items successfully")
-    func loadItems() async {
-        let viewModel = ItemViewModel(service: MockItemService())
-        await viewModel.loadItems()
-        #expect(viewModel.items.count == 3)
-        #expect(!viewModel.isLoading)
-    }
-
-    @Test("handles errors gracefully")
-    func loadItemsError() async {
-        let viewModel = ItemViewModel(service: FailingItemService())
-        await viewModel.loadItems()
-        #expect(viewModel.errorMessage != nil)
-    }
+@Test("loads items")
+func loadsItems() async {
+    let vm = ItemsViewModel(service: MockItemsService())
+    await vm.load()
+    #expect(!vm.items.isEmpty)
 }
 ```
+
+## Load next
+
+| When | Read |
+|------|------|
+| Full anti-pattern catalog | `references/anti-patterns.md` or skill `swift-anti-pattern-guard` |
+| New app bootstrap | `swift-app-scaffold` |
+| Test boilerplate | `swift-test-scaffold` |
+| Reusable cross-target code | Extract a focused package or module |
+
+## Pre-finish checklist
+
+- [ ] No forbidden observation/GCD/navigation/Core Data APIs
+- [ ] Deployment targets match the product support policy
+- [ ] Services are actors or otherwise Sendable-safe
+- [ ] New tests use Swift Testing

@@ -1,6 +1,6 @@
 ---
 description: Scan all repos in a directory for health status — dirty files, sync state, open PRs, issues, merge conflicts, and branch hygiene
-argument: Optional path to scan (defaults to ~/Development) or glob filter (e.g. "Better-*")
+argument: Optional directory to scan (defaults to the current directory) or a glob filter
 ---
 
 # Repo Health Report
@@ -12,11 +12,10 @@ Scan every git repo in the target directory and produce a consolidated health re
 Find all git repos, optionally filtered by argument:
 
 ```bash
-TARGET_DIR="${ARGUMENTS:-$HOME/Development}"
+TARGET_DIR="${ARGUMENTS:-.}"
 
-# If argument looks like a glob pattern, use ~/Development as base
+# If the argument looks like a glob pattern, scan from the current directory.
 if [[ "$TARGET_DIR" == *"*"* ]]; then
-    cd ~/Development
     FILTER="$TARGET_DIR"
     TARGET_DIR="."
 fi

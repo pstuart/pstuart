@@ -7,7 +7,8 @@ Enforces Tailwind-only styling, validates nginx configs, and provides web best p
 ## Install
 
 ```bash
-claude plugin add pstuart/nuxt-modern-dev
+/plugin marketplace add pstuart/pstuart
+/plugin install nuxt-modern-dev@pstuart
 ```
 
 ## What It Does
@@ -33,7 +34,11 @@ Automatically runs `nginx -t` after editing `.conf` files that contain nginx dir
 
 | Skill | Description |
 |-------|-------------|
-| Nuxt 4 Frontend | app/ directory, Composition API, Tailwind CSS 4, Vitest |
+| Nuxt 4 Frontend | `app/` directory, data fetching, layers, and project structure |
+| Tailwind CSS 4 | Vite integration, theme tokens, utilities, and migration guidance |
+| TypeScript Strict | Strict typing for components, composables, and API responses |
+| Vue 3 Composition | `<script setup>`, reactivity, composables, and provide/inject |
+| Web Quality | ESLint, Prettier, Vitest, Playwright, and deployment gates |
 | Accessibility Audit | WCAG 2.1 AA compliance checklist |
 | Security Audit | Web application security checklist |
 

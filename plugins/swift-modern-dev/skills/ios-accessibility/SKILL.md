@@ -1,81 +1,64 @@
 ---
 name: ios-accessibility
-description: Best practices for implementing accessibility features in iOS 17+ apps, including VoiceOver support, Dynamic Type, and Human Interface Guidelines compliance.
+description: Use when implementing or auditing VoiceOver, Dynamic Type, accessibility labels, focus, contrast, or Hit-testing for SwiftUI iOS/macOS apps.
 ---
 
-# iOS Accessibility Guide
+# iOS Accessibility
 
-## VoiceOver Support
+Ship usable apps with VoiceOver, Dynamic Type, and HIG accessibility baselines.
+
+## Non-negotiables
+
+| ALWAYS | NEVER |
+|--------|--------|
+| Meaningful `accessibilityLabel` on icon-only controls | Icon-only buttons with no label |
+| Support Dynamic Type (no fixed tiny text) | Rely on color alone for meaning |
+| ≥ ~44pt touch targets for interactive controls | Trap focus / unreadable contrast |
+| Test with VoiceOver on critical flows | Ship decorative noise as accessibility elements |
+
+## Decision tree
+
+- Image/button without text? → label + optional hint
+- Group of controls? → combine or container labels
+- Custom control? → traits + value + actions
+- Motion-heavy UI? → respect Reduce Motion
+
+## Core patterns
 
 ```swift
-Text("Submit")
-    .accessibilityLabel("Submit form")
-    .accessibilityHint("Double tap to send your message")
-    .accessibilityAddTraits(.isButton)
-
-// Group related elements
-VStack {
-    Text(item.title)
-    Text(item.subtitle)
+Button {
+    isFavorite.toggle()
+} label: {
+    Image(systemName: isFavorite ? "star.fill" : "star")
 }
+.accessibilityLabel(isFavorite ? "Remove from favorites" : "Add to favorites")
+.accessibilityAddTraits(isFavorite ? .isSelected : [])
+
+Text(title)
+    .font(.body) // scales with Dynamic Type
+    .accessibilityHeading(.h2)
+```
+
+```swift
 .accessibilityElement(children: .combine)
-
-// Custom actions
-.accessibilityAction(named: "Delete") {
-    deleteItem()
-}
+.accessibilityAction(named: "Delete") { delete() }
 ```
 
-## Dynamic Type
+## Checklist
 
-```swift
-// Use ScaledMetric for custom sizes
-@ScaledMetric var iconSize: CGFloat = 24
-@ScaledMetric var spacing: CGFloat = 8
+- [ ] All interactive elements labeled
+- [ ] Decorative images: `.accessibilityHidden(true)`
+- [ ] Dynamic Type: no clipped essential text at largest sizes
+- [ ] Contrast sufficient for text/icons
+- [ ] VoiceOver order matches visual reading order
 
-// Adapt layout for large text
-@Environment(\.dynamicTypeSize) var typeSize
+## Load next
 
-var body: some View {
-    if typeSize >= .accessibility1 {
-        VStack { content }  // Stack vertically for large text
-    } else {
-        HStack { content }  // Side by side for normal text
-    }
-}
-```
+| When | Read |
+|------|------|
+| Deep examples | Claude legacy examples under old skill if needed; prefer keep this slim |
 
-## Reduce Motion
+## Pre-finish checklist
 
-```swift
-@Environment(\.accessibilityReduceMotion) var reduceMotion
-
-var animation: Animation? {
-    reduceMotion ? nil : .spring()
-}
-```
-
-## Color Contrast
-
-- Normal text: 4.5:1 minimum contrast ratio
-- Large text (18pt+): 3:1 minimum
-- UI components: 3:1 minimum
-- Use semantic colors that adapt to light/dark mode
-
-## Focus Management
-
-```swift
-@AccessibilityFocusState var focusedField: Field?
-
-enum Field { case name, email, submit }
-
-TextField("Name", text: $name)
-    .accessibilityFocused($focusedField, equals: .name)
-
-// Move focus programmatically
-Button("Submit") {
-    if name.isEmpty {
-        focusedField = .name  // Focus the error field
-    }
-}
-```
+- [ ] Icon-only controls labeled
+- [ ] VoiceOver path sanity-checked for the feature

@@ -7,7 +7,8 @@ Enforces Swift 6 patterns, blocks deprecated APIs, and provides architecture gui
 ## Install
 
 ```bash
-claude plugin add pstuart/swift-modern-dev
+/plugin marketplace add pstuart/pstuart
+/plugin install swift-modern-dev@pstuart
 ```
 
 ## What It Does
@@ -39,6 +40,8 @@ Pipes `xcodebuild` output through `xcbeautify` for cleaner build logs.
 | Skill | Description |
 |-------|-------------|
 | Swift Modern Architecture | MVVM + @Observable + SwiftData + NavigationStack patterns |
+| Swift Anti-Pattern Guard | Finds outdated Observation, GCD, navigation, and persistence patterns |
+| Swift App Scaffold | Dependency-neutral SwiftUI project and package scaffolding |
 | Swift Performance Optimization | Instruments profiling, memory, rendering |
 | Swift Test Scaffold | Swift Testing framework boilerplate generation |
 | Memory Leak Diagnosis | Retain cycle detection and fixes |

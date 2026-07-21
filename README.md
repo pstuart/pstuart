@@ -48,6 +48,20 @@ Started coding at age 8 — first app: a Pascal grading tool in 1992. Purdue gra
 
 <br>
 
+## Claude Code Plugin Marketplace
+
+This repository hosts public Claude Code plugins for development safety, modern Swift and Nuxt projects, and publishing workflows.
+
+```text
+/plugin marketplace add pstuart/pstuart
+/plugin install swift-modern-dev@pstuart
+/plugin install nuxt-modern-dev@pstuart
+```
+
+Available plugins: `dev-safety-net`, `swift-modern-dev`, `nuxt-modern-dev`, and `pstuart-publishing`.
+
+<br>
+
 ## Tech Stack
 
 ### Languages & Frameworks

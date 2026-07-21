@@ -16,7 +16,8 @@ Protects you from common mistakes and keeps your workflow informed:
 ## Install
 
 ```bash
-claude plugin add pstuart/dev-safety-net
+/plugin marketplace add pstuart/pstuart
+/plugin install dev-safety-net@pstuart
 ```
 
 ## Components

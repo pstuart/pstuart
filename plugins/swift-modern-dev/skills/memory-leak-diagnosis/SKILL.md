@@ -1,81 +1,79 @@
 ---
 name: memory-leak-diagnosis
-description: Detecting and fixing memory leaks and retain cycles in Swift apps using Instruments, strict concurrency, and @Observable patterns.
+description: Use when investigating memory growth, retain cycles, leaks in Instruments, Task cancellation issues, or ARC problems in Swift 6 apps.
 ---
 
 # Memory Leak Diagnosis
 
-## Common Leak Patterns
+Find and fix leaks and retain cycles using modern concurrency patterns.
 
-### 1. Closure Retain Cycles
+## Non-negotiables
+
+| ALWAYS | NEVER |
+|--------|--------|
+| Cancel long-lived `Task`s | Infinite `Task` loops without cancellation |
+| Prefer structured async over stored escaping closures | Strong `self` in stored closures without reason |
+| Profile with Instruments / Memory Graph | “Optimize” without evidence of a leak |
+| Prefer `@Observable` + async over Combine sinks | Ignore purple leak markers in Memory Graph |
+
+## Decision tree
+
+- Growth while navigating? → Memory Graph + Leaks instrument
+- Closure / delegate cycle? → `weak` / remove stored closures / use async
+- Background work outlives UI? → store `Task`, cancel in `deinit` / `.onDisappear` / `.task` lifecycle
+- Shared mutable state? → `actor`
+
+## Core fixes
+
 ```swift
-// LEAK: strong self capture in stored closure
-class ViewModel {
-    var onUpdate: (() -> Void)?
-    
-    func setup() {
-        onUpdate = {
-            self.refresh()  // Retain cycle!
+@Observable
+final class SafeViewModel {
+    private var workTask: Task<Void, Never>?
+
+    func start() {
+        workTask?.cancel()
+        workTask = Task {
+            while !Task.isCancelled {
+                await doWork()
+                try? await Task.sleep(for: .seconds(1))
+            }
         }
     }
-}
 
-// FIX: weak capture
-func setup() {
-    onUpdate = { [weak self] in
-        self?.refresh()
+    func stop() {
+        workTask?.cancel()
+        workTask = nil
     }
+
+    deinit { workTask?.cancel() }
 }
 ```
 
-### 2. Delegate Retain Cycles
 ```swift
-// LEAK: strong delegate reference
-class Manager {
-    var delegate: ManagerDelegate?  // Strong!
-}
-
-// FIX: weak delegate
-class Manager {
-    weak var delegate: ManagerDelegate?
+// Prefer .task for automatic cancellation with view lifetime
+.task {
+    await viewModel.load()
 }
 ```
 
-### 3. Timer Retain Cycles
-```swift
-// LEAK: Timer retains target strongly
-Timer.scheduledTimer(timeInterval: 1, target: self, ...)
+## Instruments quick path
 
-// FIX: Use Task-based approach
-Task {
-    while !Task.isCancelled {
-        try await Task.sleep(for: .seconds(1))
-        await update()
-    }
-}
-```
+1. Product → Profile → Leaks (or Allocations)
+2. Exercise suspect flows
+3. Inspect Cycles & Roots
+4. Confirm fix with Memory Graph (no abandoned graphs)
 
-### 4. NotificationCenter (pre-iOS 17)
-```swift
-// LEAK potential: observer not removed
-NotificationCenter.default.addObserver(self, ...)
+## Common leak sources
 
-// FIX: Use async sequence (iOS 17+)
-for await _ in NotificationCenter.default.notifications(named: .didUpdate) {
-    await handleUpdate()
-}
-```
+| Pattern | Fix |
+|---------|-----|
+| Uncancelled `Task` | Cancel + check `Task.isCancelled` |
+| Stored closure capturing self | `weak self` or async API |
+| NotificationCenter observer | `AsyncSequence` notifications + cancel |
+| Timer | invalidate / use async loop with cancel |
 
-## Diagnosis with Instruments
+## Pre-finish checklist
 
-1. **Leaks**: Profile > Leaks template > Run through key flows > Check for red leak indicators
-2. **Allocations**: Track allocation growth over repeated operations (steady growth = leak)
-3. **Memory Graph**: Xcode Debug > Debug Memory Graph > Look for retain cycles (arrows forming loops)
-
-## @Observable Benefits
-
-The `@Observable` macro eliminates many common leak patterns:
-- No `@Published` property wrappers (which used Combine under the hood)
-- No `sink` subscriptions to leak
-- No `AnyCancellable` sets to manage
-- Automatic observation tracking with no manual subscription management
+- [ ] Root cause identified (not guessed)
+- [ ] Cancellation/ownership fixed
+- [ ] Re-profiled or Memory Graph clean for the flow

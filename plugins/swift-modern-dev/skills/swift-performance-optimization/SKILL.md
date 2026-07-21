@@ -1,67 +1,74 @@
 ---
 name: swift-performance-optimization
-description: Techniques for optimizing Swift code performance, memory usage, rendering efficiency, and using Instruments for profiling.
+description: Use when profiling slow SwiftUI screens, optimizing lists, reducing main-thread work, improving memory/CPU, or using Instruments Time Profiler or Swift Concurrency tools.
 ---
 
 # Swift Performance Optimization
 
-## Instruments Profiling
+Profile first, then fix the measured hot path.
 
-### Memory Leaks
-1. Open Instruments > Leaks template
-2. Run the app and exercise key flows
-3. Look for leak indicators (red bars)
-4. Examine backtrace to find retain cycles
+## Non-negotiables
 
-### Time Profiler
-1. Instruments > Time Profiler
-2. Focus on main thread hangs (>16ms for 60fps)
-3. Sort by self weight to find hot paths
-4. Use `signpost` for custom intervals
+| ALWAYS | NEVER |
+|--------|--------|
+| Measure with Instruments before large rewrites | Micro-optimize unmeasured code |
+| Keep heavy work off `@MainActor` | Block main actor with parsing/image work |
+| Prefer `@Observable` fine-grained updates | Force full-tree invalidation patterns |
+| Use lazy stacks/grids for large collections | Eagerly build thousands of heavy subviews |
 
-### Common Fixes
+## Decision tree
 
-**Retain Cycles in Closures:**
+- Jank while scrolling? → List/LazyVStack identity, row cost, images
+- Hang on action? → Time Profiler; move work off main actor
+- Memory climb? → `memory-leak-diagnosis` + Allocations
+- Actor wait times? → Swift Concurrency instrument
+
+## Core patterns
+
 ```swift
-// Problem
-service.onComplete = { 
-    self.update()  // strong capture
+// Large lists: stable identity + light rows
+List(items) { item in
+    ItemRow(item: item) // small view, no heavy work in body
+}
+.listStyle(.plain)
+
+// Background compute
+actor Processor {
+    func process(_ input: Data) async -> Result { /* heavy */ }
 }
 
-// Fix
-service.onComplete = { [weak self] in
-    self?.update()
-}
-```
-
-**Lazy Collections:**
-```swift
-// Eager (allocates full array)
-let results = items.filter { $0.isValid }.map { $0.name }
-
-// Lazy (processes on demand)
-let results = items.lazy.filter { $0.isValid }.map { $0.name }
-```
-
-**@MainActor Isolation:**
-```swift
-// Instead of dispatching to main queue
 @MainActor
-class ViewModel: Observable {
-    var data: [Item] = []  // Already main-actor isolated
+@Observable
+final class VM {
+    var result: Result?
+    private let processor = Processor()
+
+    func run(_ data: Data) async {
+        result = await processor.process(data)
+    }
 }
 ```
 
-**SwiftUI View Performance:**
 ```swift
-// Use Equatable conformance for complex views
-struct ExpensiveRow: View, Equatable {
-    let item: Item
-    
-    static func == (lhs: Self, rhs: Self) -> Bool {
-        lhs.item.id == rhs.item.id && lhs.item.updatedAt == rhs.item.updatedAt
+// AsyncImage with phases; cache if product requires
+AsyncImage(url: url) { phase in
+    switch phase {
+    case .success(let image): image.resizable().scaledToFill()
+    case .failure: Image(systemName: "photo")
+    default: ProgressView()
     }
-    
-    var body: some View { ... }
 }
 ```
+
+## Instruments
+
+1. Product → Profile → Time Profiler and/or Swift Concurrency
+2. Invert call tree; watch main thread Self time
+3. Fix top offenders only; re-measure
+
+## Pre-finish checklist
+
+- [ ] Bottleneck measured
+- [ ] Main-actor work minimized
+- [ ] Large collections use lazy containers
+- [ ] Re-profiled or justified skip

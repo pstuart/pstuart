@@ -1,0 +1,33 @@
+{
+  "name": "pstuart",
+  "owner": {
+    "name": "Patrick Stuart"
+  },
+  "description": "Public Claude Code plugins for safer development, modern Swift and Nuxt projects, and publishing workflows.",
+  "plugins": [
+    {
+      "name": "dev-safety-net",
+      "source": "./plugins/dev-safety-net",
+      "description": "Guardrails, build verification, session context, and repository health checks.",
+      "category": "development"
+    },
+    {
+      "name": "swift-modern-dev",
+      "source": "./plugins/swift-modern-dev",
+      "description": "Modern Swift and SwiftUI architecture, testing, performance, accessibility, and scaffolding guidance.",
+      "category": "development"
+    },
+    {
+      "name": "nuxt-modern-dev",
+      "source": "./plugins/nuxt-modern-dev",
+      "description": "Nuxt 4, Vue 3, Tailwind CSS 4, strict TypeScript, testing, accessibility, and security guidance.",
+      "category": "development"
+    },
+    {
+      "name": "pstuart-publishing",
+      "source": "./plugins/pstuart-publishing",
+      "description": "Professional book publishing workflows for PDF, EPUB, covers, and KDP-ready output.",
+      "category": "productivity"
+    }
+  ]
+}

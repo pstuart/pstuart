@@ -87,6 +87,36 @@ def _render_front_panel(
         )
 
 
+def _wrap_paragraph(
+    pdf: FPDF,
+    text: str,
+    fonts: dict,
+    font_key: str,
+    size_pt: float,
+    max_width_in: float,
+) -> list[str]:
+    """Greedily wrap ``text`` to lines no wider than ``max_width_in`` inches.
+
+    Uses the live fpdf string-width metric for the actual registered font, so a
+    long blurb/bio paragraph stays inside its panel instead of overflowing across
+    the spine onto the front cover.
+    """
+    family, style = fonts.get(font_key, ("Helvetica", ""))
+    pdf.set_font(family, style, size=size_pt)
+    lines: list[str] = []
+    cur = ""
+    for word in text.split():
+        trial = f"{cur} {word}".strip()
+        if not cur or pdf.get_string_width(trial) <= max_width_in:
+            cur = trial
+        else:
+            lines.append(cur)
+            cur = word
+    if cur:
+        lines.append(cur)
+    return lines
+
+
 def _render_back_panel(
     pdf: FPDF,
     config: dict,
@@ -108,7 +138,7 @@ def _render_back_panel(
     cx = (back_start + back_end) / 2
     safe_top = BLEED_INCHES + SAFE_MARGIN_INCHES
     safe_bottom = wrap_height - BLEED_INCHES - SAFE_MARGIN_INCHES
-    text_w = safe_right - safe_left  # noqa: F841 — available for future use
+    text_w = safe_right - safe_left
 
     # --- Bottom-anchored zones (compute y positions first; flowing zones must not overlap) ---
 
@@ -241,20 +271,22 @@ def _render_back_panel(
         )
         cur_y += 0.2
 
-    # Blurb paragraphs (left-aligned; blank lines become paragraph breaks)
+    # Blurb paragraphs (left-aligned; each paragraph wrapped to the panel width)
     blurb = config.get("blurb", [])
     if blurb:
         max_cur_y = flow_bottom - 0.3
-        for line in blurb:
+        for para in blurb:
             if cur_y > max_cur_y:
                 break
-            if line:
+            if para:
+                wrapped = _wrap_paragraph(pdf, para, fonts, "regular", 11, text_w)
                 draw_left_aligned_block(
-                    pdf, lines=[line], x=safe_left, y=cur_y,
+                    pdf, lines=wrapped, x=safe_left, y=cur_y,
                     size_pt=11, color=colors["body"], line_height_in=0.18,
                     halo=colors["halo"],
                 )
-            cur_y += 0.18
+                cur_y += 0.18 * len(wrapped)
+            cur_y += 0.12  # paragraph gap
         cur_y += 0.1
         draw_ink_rule(
             pdf, x_start=safe_left, x_end=safe_right, y=cur_y,
@@ -271,17 +303,26 @@ def _render_back_panel(
             halo=colors["halo"],
         )
         cur_y += 0.2
-        bio_lines = config["author_bio"].split("\n")
+        bio_paras = config["author_bio"].split("\n")
         bio_x = safe_left + (photo_w_in + 0.15 if has_photo else 0)
-        for line in bio_lines:
-            if cur_y > flow_bottom:
-                break
-            draw_italic_block(
-                pdf, lines=[line], x=bio_x, y=cur_y,
-                size_pt=10, color=colors["body"], line_height_in=0.17,
-                halo=colors["halo"],
+        bio_w = safe_right - bio_x
+        dropped = 0
+        for para in bio_paras:
+            for wline in _wrap_paragraph(pdf, para, fonts, "italic", 10, bio_w):
+                if cur_y > flow_bottom:
+                    dropped += 1
+                    continue
+                draw_italic_block(
+                    pdf, lines=[wline], x=bio_x, y=cur_y,
+                    size_pt=10, color=colors["body"], line_height_in=0.17,
+                    halo=colors["halo"],
+                )
+                cur_y += 0.17
+        if dropped:
+            print(
+                f"  WARNING: back-cover bio overflowed its panel — {dropped} line(s) "
+                "were cut. Shorten BOOK_CONFIG['author_bio']."
             )
-            cur_y += 0.17
 
 
 def _render_spine(

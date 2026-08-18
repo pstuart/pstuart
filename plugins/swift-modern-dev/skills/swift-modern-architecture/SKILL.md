@@ -5,7 +5,7 @@ description: Use when writing Swift or SwiftUI code, designing iOS/macOS archite
 
 # Swift Modern Architecture
 
-**Baseline:** Swift 6.2, SwiftUI, Observation, SwiftData, and Swift Testing. Confirm deployment targets against the project requirements.
+**Baseline:** Swift 6.3, SwiftUI, Observation, SwiftData, and Swift Testing. Confirm deployment targets against the project requirements.
 
 ## Non-negotiables
 

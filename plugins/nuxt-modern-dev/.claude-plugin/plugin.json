@@ -1,6 +1,6 @@
 {
   "name": "nuxt-modern-dev",
-  "version": "1.1.0",
+  "version": "1.1.1",
   "description": "Modern Nuxt/Vue development toolkit — enforces Tailwind-only styling, validates nginx configs, and provides accessibility and security guidance",
   "author": {
     "name": "Patrick Stuart",

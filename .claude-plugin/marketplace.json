@@ -1,7 +1,8 @@
 {
   "name": "pstuart",
   "owner": {
-    "name": "Patrick Stuart"
+    "name": "Patrick Stuart",
+    "url": "https://github.com/pstuart"
   },
   "description": "Public Claude Code plugins for safer development, modern Swift and Nuxt projects, and publishing workflows.",
   "plugins": [

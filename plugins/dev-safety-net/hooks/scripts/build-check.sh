@@ -48,17 +48,24 @@ elif find . -maxdepth 2 -name "*.xcodeproj" 2>/dev/null | grep -q .; then
 fi
 
 if [[ -f "package.json" ]]; then
+    if command -v bun >/dev/null && { [[ -f bun.lock ]] || [[ -f bun.lockb ]]; }; then
+        RUN="bun run"
+        LINT_BIN="./node_modules/.bin/eslint"
+    else
+        RUN="npm run"
+        LINT_BIN="npx eslint"
+    fi
     if grep -q '"build"' package.json 2>/dev/null; then
         if [[ -f "nuxt.config.ts" ]] || [[ -f "nuxt.config.js" ]]; then
-            BUILD_CMD="npm run build"
+            BUILD_CMD="$RUN build"
         elif grep -q '"type-check"' package.json 2>/dev/null; then
-            BUILD_CMD="npm run type-check"
+            BUILD_CMD="$RUN type-check"
         else
-            BUILD_CMD="npm run build"
+            BUILD_CMD="$RUN build"
         fi
     fi
     if [[ -f "node_modules/.bin/eslint" ]] || command -v eslint &>/dev/null; then
-        LINT_CMD="npx eslint . --max-warnings=0 --quiet"
+        LINT_CMD="$LINT_BIN . --max-warnings=0 --quiet"
     fi
 fi
 

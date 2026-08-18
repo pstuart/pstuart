@@ -50,6 +50,7 @@ Protects you from common mistakes and keeps your workflow informed:
 - [trash](https://formulae.brew.sh/formula/trash) — recommended safe alternative to rm
 - [swiftlint](https://github.com/realm/SwiftLint) — optional, for Swift auto-formatting
 - [prettier](https://prettier.io/) — optional, for web file auto-formatting
+- [bun](https://bun.sh/) — preferred for Nuxt/Vue repos that have a `bun.lock` / `bun.lockb`; otherwise npm
 
 ## License
 

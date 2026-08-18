@@ -44,9 +44,21 @@ EOF
     exit 0
 fi
 
-# Block git push --force to main/master
-if echo "$command" | grep -qE 'git\s+push\s+.*--force.*\s+(main|master)|git\s+push\s+.*-f.*\s+(main|master)'; then
-    cat << 'EOF'
+# Block force-push targeting main/master, including:
+#   git push --force origin main
+#   git push origin main --force
+#   git push -f origin HEAD:main
+#   git push origin +main
+if echo "$command" | grep -qE 'git[[:space:]]+push[[:space:]]'; then
+    force_flag=false
+    if echo "$command" | grep -qE '(^|[[:space:]])(--force|--force-with-lease|-f)([[:space:]]|$)'; then
+        force_flag=true
+    fi
+    if echo "$command" | grep -qE '[[:space:]]\+(main|master)([[:space:]]|$)'; then
+        force_flag=true
+    fi
+    if [[ "$force_flag" == "true" ]] && echo "$command" | grep -qE '(^|[[:space:]/:+])(main|master)([[:space:]]|$)'; then
+        cat << 'EOF'
 {
   "hookSpecificOutput": {
     "hookEventName": "PreToolUse",
@@ -56,7 +68,8 @@ if echo "$command" | grep -qE 'git\s+push\s+.*--force.*\s+(main|master)|git\s+pu
   "continue": false
 }
 EOF
-    exit 0
+        exit 0
+    fi
 fi
 
 # Allow all other commands

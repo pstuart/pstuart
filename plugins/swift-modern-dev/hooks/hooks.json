@@ -6,7 +6,7 @@
         "hooks": [
           {
             "type": "command",
-            "command": "bash $CLAUDE_PLUGIN_ROOT/hooks/scripts/swift-anti-pattern-guard.sh",
+            "command": "bash \"${CLAUDE_PLUGIN_ROOT}/hooks/scripts/swift-anti-pattern-guard.sh\"",
             "timeout": 2
           }
         ]
@@ -16,9 +16,8 @@
         "hooks": [
           {
             "type": "command",
-            "command": "bash $CLAUDE_PLUGIN_ROOT/hooks/scripts/xcbeautify-hook.sh",
-            "timeout": 5,
-            "async": true
+            "command": "bash \"${CLAUDE_PLUGIN_ROOT}/hooks/scripts/xcbeautify-hook.sh\"",
+            "timeout": 5
           }
         ]
       }
@@ -29,7 +28,7 @@
         "hooks": [
           {
             "type": "command",
-            "command": "bash $CLAUDE_PLUGIN_ROOT/hooks/scripts/swiftlint-format.sh",
+            "command": "bash \"${CLAUDE_PLUGIN_ROOT}/hooks/scripts/swiftlint-format.sh\"",
             "timeout": 10,
             "async": true
           }

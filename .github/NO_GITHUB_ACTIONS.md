@@ -2,10 +2,17 @@
 
 This repository does **not** use GitHub Actions for CI, tests, lint, deploy, or releases.
 
-Run lint, tests, and builds locally.
+It is a GitHub profile README plus a public Claude Code plugin marketplace. Run validation and tests locally:
 
-- Deployed Nuxt sites: `stuartdeploy`
-- `stuarttech-shared` releases: `scripts/validate-release.sh` then a local git tag
-- `stuarttech-nuxt-shared` releases: `bun run verify` then local `changeset publish`
+```bash
+claude plugin validate . --strict
+for plugin in plugins/*; do
+  claude plugin validate "$plugin" --strict
+done
+
+# book-publisher engine
+cd plugins/pstuart-publishing/skills/book-publisher
+python3 -m pytest -q
+```
 
 Do not add `.github/workflows/*.yml`.

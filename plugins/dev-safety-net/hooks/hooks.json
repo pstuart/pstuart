@@ -6,7 +6,7 @@
         "hooks": [
           {
             "type": "command",
-            "command": "bash $CLAUDE_PLUGIN_ROOT/hooks/scripts/command-validator.sh",
+            "command": "bash \"${CLAUDE_PLUGIN_ROOT}/hooks/scripts/command-validator.sh\"",
             "timeout": 2
           }
         ]
@@ -18,7 +18,7 @@
         "hooks": [
           {
             "type": "command",
-            "command": "bash $CLAUDE_PLUGIN_ROOT/hooks/scripts/auto-format.sh",
+            "command": "bash \"${CLAUDE_PLUGIN_ROOT}/hooks/scripts/auto-format.sh\"",
             "timeout": 10,
             "async": true
           }
@@ -30,12 +30,12 @@
         "hooks": [
           {
             "type": "command",
-            "command": "bash $CLAUDE_PLUGIN_ROOT/hooks/scripts/project-task-list.sh",
+            "command": "bash \"${CLAUDE_PLUGIN_ROOT}/hooks/scripts/project-task-list.sh\"",
             "timeout": 5
           },
           {
             "type": "command",
-            "command": "bash $CLAUDE_PLUGIN_ROOT/hooks/scripts/session-context.sh",
+            "command": "bash \"${CLAUDE_PLUGIN_ROOT}/hooks/scripts/session-context.sh\"",
             "timeout": 10,
             "async": true
           }
@@ -47,7 +47,7 @@
         "hooks": [
           {
             "type": "command",
-            "command": "bash $CLAUDE_PLUGIN_ROOT/hooks/scripts/build-check.sh",
+            "command": "bash \"${CLAUDE_PLUGIN_ROOT}/hooks/scripts/build-check.sh\"",
             "timeout": 120,
             "async": true
           }

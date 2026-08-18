@@ -6,7 +6,7 @@
         "hooks": [
           {
             "type": "command",
-            "command": "bash $CLAUDE_PLUGIN_ROOT/hooks/scripts/vue-anti-pattern-guard.sh",
+            "command": "bash \"${CLAUDE_PLUGIN_ROOT}/hooks/scripts/vue-anti-pattern-guard.sh\"",
             "timeout": 2
           }
         ]
@@ -18,12 +18,12 @@
         "hooks": [
           {
             "type": "command",
-            "command": "bash $CLAUDE_PLUGIN_ROOT/hooks/scripts/nginx-syntax-check.sh",
+            "command": "bash \"${CLAUDE_PLUGIN_ROOT}/hooks/scripts/nginx-syntax-check.sh\"",
             "timeout": 5
           },
           {
             "type": "command",
-            "command": "bash $CLAUDE_PLUGIN_ROOT/hooks/scripts/prettier-format.sh",
+            "command": "bash \"${CLAUDE_PLUGIN_ROOT}/hooks/scripts/prettier-format.sh\"",
             "timeout": 10,
             "async": true
           }

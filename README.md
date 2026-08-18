@@ -54,8 +54,10 @@ This repository hosts public Claude Code plugins for development safety, modern 
 
 ```text
 /plugin marketplace add pstuart/pstuart
+/plugin install dev-safety-net@pstuart
 /plugin install swift-modern-dev@pstuart
 /plugin install nuxt-modern-dev@pstuart
+/plugin install pstuart-publishing@pstuart
 ```
 
 Available plugins: `dev-safety-net`, `swift-modern-dev`, `nuxt-modern-dev`, and `pstuart-publishing`.
@@ -135,7 +137,7 @@ Available plugins: `dev-safety-net`, `swift-modern-dev`, `nuxt-modern-dev`, and 
 <td width="50%">
 <h3 align="center">SmartThings Community Tools</h3>
 <p align="center">
-<a href="https://github.com/pstuart/Generic-Video-Camera" target="_blank"><img src="https://img.shields.io/badge/Generic_Video_Camera-113★-yellow?style=flat-square" /></a>
+<a href="https://github.com/pstuart/Generic-Video-Camera" target="_blank"><img src="https://img.shields.io/badge/Generic_Video_Camera-111★-yellow?style=flat-square" /></a>
 <a href="https://github.com/pstuart/smartthings-ps" target="_blank"><img src="https://img.shields.io/badge/smartthings--ps-77★-yellow?style=flat-square" /></a>
 </p>
 <p align="center">High-impact Groovy repositories for home automation enthusiasts</p>
@@ -176,9 +178,9 @@ Available plugins: `dev-safety-net`, `swift-modern-dev`, `nuxt-modern-dev`, and 
 ## Latest Writing
 
 <!-- BLOG-POST-LIST:START -->
+- [Mastering Context Management in Claude Code: CLAUDE.md, Memory, and Beyond](https://patrickstuart.com/2026/03/10/mastering-context-management-in-claude-code-claudemd-memory-and-beyond/)
+- [Best Practices for Context Management in AI-Assisted Development](https://patrickstuart.com/2026/02/02/best-practices-for-context-management-in-ai-assisted-development/)
 - [Managing Engineer Burnout in High-Paced Tech Environments](https://patrickstuart.com/2025/11/05/managing-engineer-burnout-in-high-paced-tech-environments/)
-- [Leveraging AI for Automated Code Reviews](https://patrickstuart.com/2025/10/31/leveraging-ai-for-automated-code-reviews-in-front-end-development/)
-- [Building AI-Powered Forms in Vue.js](https://patrickstuart.com/2025/10/28/building-ai-powered-forms-in-vue-js/)
 <!-- BLOG-POST-LIST:END -->
 
 <p align="center">

@@ -1,7 +1,7 @@
 {
   "name": "pstuart-publishing",
-  "version": "1.0.0",
-  "description": "Publishing toolkit — professional book publishing (PDF/EPUB/covers), blog authoring, and content-creation workflows",
+  "version": "1.0.1",
+  "description": "Professional book publishing workflows for PDF, EPUB, covers, and KDP-ready output",
   "author": {
     "name": "Patrick Stuart",
     "url": "https://github.com/pstuart"

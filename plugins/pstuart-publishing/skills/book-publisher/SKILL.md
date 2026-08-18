@@ -156,9 +156,6 @@ python3 compose_interior_art.py   # optional — only if you want chapter motif
 
 # 8. Add covers to PDF
 python3 add_covers_to_pdf.py
-
-# 9. Protect PDF (optional)
-python3 protect_pdf.py "YourOwnerPassword"
 ```
 
 ## Project Structure
@@ -175,8 +172,11 @@ BookProject/
 │   ├── generate_pdf.py           # PDF generator
 │   ├── generate_epub.py          # EPUB generator
 │   ├── generate_index.py         # Index generator
-│   ├── create_kindle_cover.py    # Kindle cover
-│   ├── create_paperback_cover.py # Paperback wrap cover
+│   ├── generate_cover_art.py     # AI cover-art loop (needs zgen on PATH)
+│   ├── compose_kindle_cover.py   # Kindle cover (vector text over bitmap)
+│   ├── compose_paperback_wrap.py # Paperback wrap with spine
+│   ├── compose_interior_art.py   # Optional chapter motif
+│   ├── add_covers_to_pdf.py      # Front/back panels onto interior PDF
 │   ├── epub_styles.css           # EPUB stylesheet
 │   ├── manuscript_compiled.md    # Compiled output
 │   ├── BookTitle_v*.pdf          # Generated PDFs
@@ -411,6 +411,8 @@ Typical results from copy fitting:
 
 ## PDF Protection
 
+Optional snippet — there is no shipped `protect_pdf` template. Add this to a project script if you need owner-password encryption.
+
 ### protect_pdf.py Features
 - **2-page book layout view** - Opens like a physical book
 - **Password protection** - Owner password required for editing
@@ -478,7 +480,7 @@ generate_cover_art.py   (interactive — drafts prompts, runs zgen serially,
 
 ### Requirements
 
-- Local `zgen` binary at `/Users/pstuart/bin/zgen` (Z Image Turbo via Draw Things CLI)
+- Local `zgen` binary on `PATH` (Z Image Turbo via Draw Things CLI)
 - All image generation is **serial, one call at a time** — never batched
 
 ### Configuration
@@ -719,10 +721,11 @@ pip3 install pdf2image
 | `templates/generate_pdf_template.py` | Full PDF generation with styling |
 | `templates/generate_epub_template.py` | EPUB generation with ebooklib |
 | `templates/generate_index_template.py` | Index extraction and PDF merge |
-| `templates/create_kindle_cover_template.py` | Kindle front cover |
-| `templates/create_paperback_cover_template.py` | Full wrap cover with spine |
+| `templates/generate_cover_art_template.py` | Interactive zgen cover-art loop |
+| `templates/compose_kindle_cover_template.py` | Kindle front cover (vector overlay) |
+| `templates/compose_paperback_wrap_template.py` | Full wrap cover with spine |
+| `templates/compose_interior_art_template.py` | Chapter motif compositor |
 | `templates/add_covers_to_pdf_template.py` | Extract covers from wrap, add to PDF |
-| `templates/protect_pdf_template.py` | PDF encryption and protection |
 | `templates/epub_styles.css` | Kindle-optimized stylesheet |
 | `converters/docx_to_markdown.py` | Word document converter |
 | `converters/text_to_markdown.py` | Plain text converter |
@@ -841,9 +844,10 @@ Before publishing:
 mkdir -p MyBook/{manuscript,publishing,assets}
 cd MyBook
 
-# 2. Copy templates
-cp ~/.claude/skills/book-publisher/templates/*.py publishing/
-cp ~/.claude/skills/book-publisher/templates/epub_styles.css publishing/
+# 2. Copy templates from the installed plugin skill
+# Marketplace cache: ~/.claude/plugins/cache/pstuart/pstuart-publishing/<version>/skills/book-publisher/templates/
+cp /path/to/pstuart-publishing/skills/book-publisher/templates/*.py publishing/
+cp /path/to/pstuart-publishing/skills/book-publisher/templates/epub_styles.css publishing/
 
 # 3. Write chapters in manuscript/
 # 00-preface.md, 01-chapter.md, etc.
@@ -863,18 +867,15 @@ python3 compile_book.py
 python3 generate_pdf.py
 python3 generate_index.py
 python3 generate_epub.py
-python3 create_kindle_cover.py
-python3 create_paperback_cover.py
+python3 generate_cover_art.py
+python3 compose_kindle_cover.py
+python3 compose_paperback_wrap.py
 
 # 7. Add covers to PDF
 python3 add_covers_to_pdf.py
 
-# 8. Protect PDF (optional)
-python3 protect_pdf.py "YourSecurePassword"
-
-# 9. Validate outputs
+# 8. Validate outputs
 open MyBook_v*_with_covers.pdf
-open MyBook_v*_protected.pdf
 open MyBook_*.epub  # In Kindle Previewer
 ```
 

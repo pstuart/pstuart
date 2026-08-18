@@ -1,4 +1,4 @@
-"""Wrapper around the local /Users/pstuart/bin/zgen CLI.
+"""Wrapper around the local `zgen` CLI (Draw Things / Z Image Turbo).
 
 Serial calls only — per user preference, never batch image generation.
 Each run_zgen() invocation produces exactly one image or raises.
@@ -6,8 +6,6 @@ Each run_zgen() invocation produces exactly one image or raises.
 from pathlib import Path
 import shutil
 import subprocess
-
-ZGEN_BIN_DEFAULT = "/Users/pstuart/bin/zgen"
 
 # Recommended negative-prompt for book covers — steers the model away from
 # the hallucinated text that diffusion models often bake into "painterly" art.
@@ -32,6 +30,17 @@ def _ensure_multiple_of_64(value: int, name: str) -> int:
     return value
 
 
+def _resolve_bin(bin_path: str) -> str:
+    found = shutil.which(bin_path)
+    if found is None:
+        raise ZgenNotFoundError(
+            f"zgen not found ({bin_path!r} is not on PATH and is not an "
+            "executable file). Install the local Draw Things CLI wrapper and "
+            "ensure `zgen` is on PATH."
+        )
+    return found
+
+
 def run_zgen(
     prompt: str,
     output: Path,
@@ -39,7 +48,7 @@ def run_zgen(
     height: int,
     seed: int,
     steps: int | None = None,
-    bin_path: str = ZGEN_BIN_DEFAULT,
+    bin_path: str = "zgen",
     negative_prompt: str | None = None,
 ) -> Path:
     """Invoke zgen once to produce exactly one image at `output`.
@@ -51,13 +60,7 @@ def run_zgen(
 
     Raises ZgenNotFoundError or ZgenFailureError on any problem.
     """
-    if shutil.which(bin_path) is None:
-        raise ZgenNotFoundError(
-            f"zgen not found at {bin_path!r}. "
-            "This skill requires the local Draw Things CLI wrapper. "
-            "See ~/.claude/projects/-Users-pstuart-Development/memory/"
-            "feedback_image_generation_zchat.md"
-        )
+    resolved = _resolve_bin(bin_path)
 
     _ensure_multiple_of_64(width, "width")
     _ensure_multiple_of_64(height, "height")
@@ -65,7 +68,7 @@ def run_zgen(
     output.parent.mkdir(parents=True, exist_ok=True)
 
     cmd = [
-        bin_path,
+        resolved,
         "-W", str(width),
         "-H", str(height),
         "-s", str(seed),

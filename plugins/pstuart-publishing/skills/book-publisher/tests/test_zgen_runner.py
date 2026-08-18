@@ -17,9 +17,11 @@ def test_zgen_not_on_path_raises(monkeypatch):
 
 def test_successful_run_returns_path(tmp_path: Path, monkeypatch):
     out = tmp_path / "out.png"
-    monkeypatch.setattr("shutil.which", lambda _: "/usr/bin/zgen")
+    captured = []
+    monkeypatch.setattr("shutil.which", lambda name: "/usr/bin/zgen" if name == "zgen" else None)
 
-    def fake_run(*args, **kwargs):
+    def fake_run(cmd, **kwargs):
+        captured.append(cmd)
         out.write_bytes(b"fake png")
         m = MagicMock()
         m.returncode = 0
@@ -31,6 +33,7 @@ def test_successful_run_returns_path(tmp_path: Path, monkeypatch):
     result = run_zgen(prompt="x", output=out, width=832, height=1472, seed=1)
     assert result == out
     assert result.exists()
+    assert captured[0][0] == "/usr/bin/zgen"
 
 
 def test_nonzero_returncode_raises_with_stderr(tmp_path: Path, monkeypatch):

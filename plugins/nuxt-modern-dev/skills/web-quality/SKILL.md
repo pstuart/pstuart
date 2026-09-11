@@ -5,6 +5,8 @@ description: Use when setting up or running ESLint, Prettier, Vitest, or Playwri
 
 # Web Quality (Lint, Format, Test)
 
+New test files, test targets requiring new files, and test-only helpers/fixtures require explicit user authorization. A request to implement, fix, test, or verify does not by itself authorize their creation. Prefer existing tests and direct runtime checks; ask only when a specific new test has concrete benefit. Run checks appropriate to the change and repeat only after relevant changes, failures, or unresolved concerns.
+
 **Baseline:** ESLint 9 with `@nuxt/eslint`, Vitest 4.x, and Playwright for critical E2E flows. Confirm versions from the repository lockfile.
 
 ## Non-negotiables
@@ -75,5 +77,5 @@ bun run build      # required before deployment
 ## Pre-finish checklist
 
 - [ ] Lint/format scripts exist and run
-- [ ] New logic has Vitest coverage or a clear “types-only” reason
+- [ ] Changed logic checked with existing/authorized tests or direct runtime verification; remaining coverage gaps reported
 - [ ] No eslint-disable without comment

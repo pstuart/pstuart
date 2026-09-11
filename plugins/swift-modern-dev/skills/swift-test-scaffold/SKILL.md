@@ -5,6 +5,8 @@ description: Use when adding Swift tests, creating test targets, scaffolding Vie
 
 # Swift Test Scaffold
 
+New test files, test targets requiring new files, and test-only helpers/fixtures require explicit user authorization. A request to implement, fix, test, or verify does not by itself authorize their creation. Prefer existing tests and direct runtime checks; ask only when a specific new test has concrete benefit. Run checks appropriate to the change and repeat only after relevant changes, failures, or unresolved concerns.
+
 Generate Swift Testing structure that verifies intent, not only surface behavior.
 
 ## Non-negotiables
@@ -72,7 +74,7 @@ final class MockFeatureService: FeatureServiceProtocol, @unchecked Sendable {
 
 ## Decision tree
 
-- Business rule / state machine? → test it
+- Business rule / state machine? → run relevant existing tests; create new tests only when authorized
 - Type system already enforces? → skip
 - UI layout only? → skip unit test; use accessibility/manual
 
@@ -86,5 +88,5 @@ swift test
 ## Pre-finish checklist
 
 - [ ] Swift Testing only for new files
-- [ ] Mocks for dependencies
-- [ ] At least one failure-path test for async logic
+- [ ] Dependencies isolated where needed; no new test-only helper or fixture without authorization
+- [ ] Relevant failure behavior is checked using existing/authorized tests or a direct runtime probe

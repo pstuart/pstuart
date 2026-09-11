@@ -5,6 +5,8 @@ description: Use when starting a new iOS or macOS app, bootstrapping Package.swi
 
 # Swift App Scaffold
 
+New test files, test targets requiring new files, and test-only helpers/fixtures require explicit user authorization. A request to implement, fix, test, or verify does not by itself authorize their creation. Prefer existing tests and direct runtime checks; ask only when a specific new test has concrete benefit. Run checks appropriate to the change and repeat only after relevant changes, failures, or unresolved concerns.
+
 Bootstrap a modern SwiftUI app without assuming a proprietary shared package, fixed workspace path, or organization-specific module layout.
 
 ## Defaults for greenfield apps
@@ -14,7 +16,7 @@ Bootstrap a modern SwiftUI app without assuming a proprietary shared package, fi
 | Deployment targets chosen from product requirements | Raising targets without confirming supported devices |
 | `@Observable` + `NavigationStack` | `ObservableObject` / `NavigationView` in new code |
 | SwiftData when it fits the persistence model | Adding persistence before the data model requires it |
-| Swift Testing for new unit tests | Shipping a new project without a test target |
+| Swift Testing when new unit tests are authorized | Creating new test files without authorization |
 | Explicit, reviewed package dependencies | Adding a shared package only for convenience |
 
 Respect an existing repository's architecture and dependency policy when adding a target to an established codebase.
@@ -39,10 +41,7 @@ let package = Package(
     ],
     targets: [
         .target(name: "YourAppFeature"),
-        .testTarget(
-            name: "YourAppFeatureTests",
-            dependencies: ["YourAppFeature"]
-        ),
+        // Add a test target only when its new test files are explicitly authorized.
     ]
 )
 ```
@@ -96,9 +95,9 @@ Adapt the structure to the product. Prefer feature boundaries over catch-all uti
 - [ ] App entry and navigation compile
 - [ ] View state uses Observation where appropriate
 - [ ] Persistence is added only when required
-- [ ] Unit-test target exists and includes a meaningful first test
+- [ ] If new tests were authorized, the target includes a meaningful behavior test; otherwise use existing checks or direct runtime verification
 - [ ] Accessibility identifiers and labels are considered from the first screen
-- [ ] Build and tests pass
+- [ ] Appropriate build and existing/authorized tests pass, or limitations are reported
 - [ ] Repository guidance documents the chosen architecture
 
 ## Pre-finish checklist

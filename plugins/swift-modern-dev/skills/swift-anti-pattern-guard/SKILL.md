@@ -49,7 +49,7 @@ rg -n "ObservableObject|@Published|@StateObject|@ObservedObject|DispatchQueue\\.
 |--------|---------|
 | "Only one ObservableObject" | In greenfield Observation code, consistency avoids two state models |
 | "DispatchQueue is clearer" | `@MainActor` is clearer under Swift 6 |
-| "Core Data already works" | New code is SwiftData; migrate when touching area |
+| "Core Data already works" | Preserve existing persistence during narrow fixes; scope a migration separately unless required and authorized |
 
 ## Pre-finish checklist
 

@@ -17,11 +17,11 @@ Transform manuscripts into professional, Amazon-ready books. Supports multiple i
 
 ## Interactive Style Workflow
 
-**IMPORTANT**: When helping users create a book, ALWAYS gather their style preferences BEFORE generating any files. Each book should have a unique look that matches its content and audience.
+Reuse the supplied brief, existing book style, and prior decisions. For a new book with missing design requirements, ask only questions that materially change the result; proceed with routine defaults and already-authorized preparation.
 
 ### Style Questionnaire
 
-Ask users these questions before starting:
+For missing preferences only, use the relevant questions below. Do not repeat answered questions or block a conversion that already has a complete brief:
 
 1. **Book Genre/Type**: What type of book is this?
    - Business/Leadership
@@ -411,7 +411,7 @@ Typical results from copy fitting:
 
 ## PDF Protection
 
-Optional snippet — there is no shipped `protect_pdf` template. Add this to a project script if you need owner-password encryption.
+Optional snippet — there is no shipped `protect_pdf` template. Use only when the user explicitly requests owner-password encryption and the shown restrictions; leave outputs unrestricted otherwise.
 
 ### protect_pdf.py Features
 - **2-page book layout view** - Opens like a physical book
@@ -795,7 +795,7 @@ self.cell(0, 10, "Text", new_x=XPos.LMARGIN, new_y=YPos.NEXT)
 
 ## Validation Checklist
 
-Before publishing:
+Apply only the checks for the requested formats and book type. Publication is a separate action requiring its applicable authorization. For a local conversion, validate the requested output without adding covers, software-specific front matter, or access restrictions unless requested.
 
 ### PDF Content
 - [ ] PDF opens correctly in Preview and Adobe Acrobat
@@ -823,19 +823,19 @@ Before publishing:
 - [ ] EPUB displays correctly on multiple devices
 - [ ] Index terms have correct page numbers
 
-### Protection (if applicable)
+### Protection (only if the user explicitly requested access restrictions)
 - [ ] PDF opens in 2-page book layout
 - [ ] Read access works without password
-- [ ] Printing is disabled
-- [ ] Copying text is disabled
-- [ ] Owner password required to edit
+- [ ] Printing permissions match the user’s explicit choice; unrestricted by default
+- [ ] Copying permissions match the user’s explicit choice; unrestricted by default
+- [ ] Owner-password protection is applied only when requested and the password is handled securely
 
-### Front Matter
+### Front Matter (only sections appropriate to this book)
 - [ ] Preface includes version information
 - [ ] Publication date is correct
-- [ ] Software version is current
+- [ ] For software documentation, any included software version is verified
 - [ ] Author bio is included
-- [ ] "Staying Current" links are valid
+- [ ] Any requested "Staying Current" links are valid
 
 ## Example Workflow: Non-Fiction Book
 

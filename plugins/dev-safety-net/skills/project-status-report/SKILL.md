@@ -2,71 +2,59 @@
 name: project-status-report
 description: Generate comprehensive status reports for all projects in a folder. Use when asked for project rundowns, status reports, release readiness, or development summaries.
 ---
+# Project status report
 
-# Project Status Report Generator
+Report activity and readiness for the requested workspace. Inspect Git state and existing verification evidence first. Build or run checks only when the user requests current verification or it is needed for the agreed readiness assessment. Do not modify checkouts to make them appear clean or ready.
 
-Generate comprehensive markdown reports on project status, development activity, and release readiness.
+## Discover repositories
 
-## When to Use
+Use the requested workspace root as the working directory. This read-only discovery supports nested category directories and `.git` files used by linked worktrees; it prunes dependency/cache trees but does not assume a fixed depth:
 
-- "Give me a report of all projects"
-- "What's the status of projects in this folder?"
-- "Which projects are release ready?"
-- "Show me development activity"
+```python
+from pathlib import Path
+import os
+import subprocess
 
-## Report Generation Process
-
-### Step 1: Discover Projects
-
-```bash
-# Find all projects with git repos
-find . -maxdepth 2 -name ".git" -type d | while read git; do
-  dirname "$git"
-done
+root = Path.cwd()
+skip = {".git", "node_modules", ".build", ".swiftpm", ".venv", "venv", "DerivedData", "dist", "build", "archive"}
+repositories = set()
+for current, directories, files in os.walk(root):
+    directories[:] = [name for name in directories if name not in skip]
+    if not (Path(current) / ".git").exists():
+        continue
+    result = subprocess.run(
+        ["git", "-C", current, "rev-parse", "--show-toplevel"],
+        text=True, capture_output=True, check=False,
+    )
+    if result.returncode == 0:
+        repositories.add(result.stdout.strip())
+for repository in sorted(repositories):
+    print(repository)
 ```
 
-### Step 2: Gather Metrics Per Project
+State discovery exclusions. For each exact repository root, inspect `git status --porcelain=v2`, current branch/HEAD, recent commits, and relevant existing build/test or release evidence. Report failed reads as unavailable; do not substitute an empty clean result.
 
-For each project, collect:
+## Verification when in scope
 
-```bash
-PROJECT="./project-name"
+Read each repository's instructions and declared scripts. Use its package manager and supported build command. For Swift packages, use `swift build --package-path <repository>`. Xcode apps may need a documented project/scheme build instead. Do not introduce a new test file or helper without explicit authorization.
 
-# Git activity
-git -C "$PROJECT" log --oneline -5 2>/dev/null
-git -C "$PROJECT" log --since="7 days ago" --oneline 2>/dev/null | wc -l
+Preserve the command's exit code even when displaying a short log tail. For example, after choosing the correct working directory and command:
 
-# Uncommitted changes
-git -C "$PROJECT" status --porcelain 2>/dev/null | wc -l
+```python
+from pathlib import Path
+import subprocess
 
-# Last commit date
-git -C "$PROJECT" log -1 --format="%cr" 2>/dev/null
-
-# Branch info
-git -C "$PROJECT" branch --show-current 2>/dev/null
-
-# Build status (try to build)
-if [[ -f "$PROJECT/Package.swift" ]]; then
-  swift build -C "$PROJECT" 2>&1 | tail -1
-elif [[ -f "$PROJECT/package.json" ]]; then
-  (cd "$PROJECT" && npm run build 2>&1 | tail -1)
-fi
+# Substitute the verified repository path and command for this project.
+repository = Path("/absolute/path/to/project")
+command = ["swift", "build", "--package-path", str(repository)]
+result = subprocess.run(command, cwd=repository, text=True, stdout=subprocess.PIPE, stderr=subprocess.STDOUT, check=False)
+print("\n".join(result.stdout.splitlines()[-20:]))
+print(f"Build exit code: {result.returncode}")
+raise SystemExit(result.returncode)
 ```
 
-### Step 3: Determine Release Readiness
+Run only checks relevant to the requested assessment; repeat after meaningful changes, failures, or unresolved concerns. Never infer a pass from a log tail or a pipeline's final command.
 
-Check:
-- [ ] Builds without errors
-- [ ] Tests pass
-- [ ] No uncommitted changes
-- [ ] On main/master branch
-- [ ] Version number updated
+## Report
 
-### Step 4: Generate Report
-
-Present a markdown report with:
-- Summary table (total projects, release ready, active, needs attention)
-- Per-project details (type, branch, last activity, build/test status)
-- Recent commits per project
-- Outstanding work items
-- Recommendations for next actions
+Give an overview and concise per-project results: exact checkout and revision, activity, existing changes, verification performed, failures or unavailable evidence, and actionable next steps. Distinguish implemented, locally validated, and externally released states. A clean tree or main branch alone does not prove release readiness, and an uncommitted reviewed change can still be implemented and locally validated.

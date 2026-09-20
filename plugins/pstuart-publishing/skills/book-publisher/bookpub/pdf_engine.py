@@ -19,6 +19,7 @@ from pathlib import Path
 
 from fpdf import FPDF
 from fpdf.enums import MethodReturnValue
+from PIL import Image
 
 from bookpub.fonts import register_mono, register_serif
 from bookpub.index import compress_ranges, find_term_pages
@@ -197,7 +198,10 @@ class BookPDF(FPDF):
     def render_body(self, body: str, section_level: int):
         for block in _split_blocks(body):
             first = block[0]
-            if first.startswith("## "):
+            img = _IMG_BLOCK_RE.match(first.strip()) if len(block) == 1 else None
+            if img:
+                self._image(img.group(2), img.group(1))
+            elif first.startswith("## "):
                 self._heading(first[3:].strip(), level=section_level, size=14)
             elif first.startswith("### "):
                 self._heading(first[4:].strip(), level=None, size=12)
@@ -216,6 +220,53 @@ class BookPDF(FPDF):
                 self._key_callout(m.group(1), m.group(2))
             else:
                 self._paragraph(" ".join(block))
+
+    def _resolve_image(self, src: str) -> Path | None:
+        raw = Path(src)
+        candidates: list[Path] = []
+        if raw.is_file():
+            return raw
+        candidates.append(raw)
+        for base in self.config.get("asset_bases") or []:
+            base_path = Path(base)
+            candidates.extend(
+                (
+                    base_path / src,
+                    base_path / src.lstrip("./"),
+                    base_path / raw.name,
+                )
+            )
+        for cand in candidates:
+            try:
+                if cand.is_file():
+                    return cand
+            except OSError:
+                continue
+        return None
+
+    def _image(self, src: str, alt: str):
+        """Place a manuscript image, scaled to the text column."""
+        path = self._resolve_image(src)
+        if path is None:
+            self._paragraph(f"[image: {alt or src}]")
+            return
+        with Image.open(path) as im:
+            width_px, height_px = im.size
+        if width_px <= 0 or height_px <= 0:
+            return
+        max_w = float(self.epw)
+        max_h = float(self.h - self.t_margin - self.b_margin) * 0.85
+        disp_w = max_w
+        disp_h = disp_w * (height_px / width_px)
+        if disp_h > max_h:
+            disp_h = max_h
+            disp_w = disp_h * (width_px / height_px)
+        if self.get_y() + disp_h > self.h - self.b_margin:
+            self.add_page()
+        x = self.l_margin + (self.epw - disp_w) / 2
+        self.image(str(path), x=x, y=self.get_y(), w=disp_w, h=disp_h,
+                   alt_text=alt or src)
+        self.set_y(self.get_y() + disp_h + 0.12)
 
     def _heading(self, text: str, level, size: int):
         if self.get_y() > self.h - self.b_margin - 1.0:
@@ -411,6 +462,7 @@ class BookPDF(FPDF):
 # --------------------------------------------------------------------------- #
 
 _CALLOUT_RE = re.compile(r"^\*\*([^*]+?):\*\*\s*(.+)$", re.DOTALL)
+_IMG_BLOCK_RE = re.compile(r"^!\[([^\]]*)\]\(([^)]+)\)$")
 
 
 def _split_blocks(body: str) -> list[list[str]]:

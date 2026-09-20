@@ -166,3 +166,40 @@ def test_pdf_links_point_to_real_pages(tmp_path):
                 seen_dest = seen_dest or dest is not None
     assert seen_dest, "link annotations must carry a destination"
     assert npages >= 5
+
+
+def _pdf_images(reader):
+    return [im for pg in reader.pages for im in pg.images]
+
+
+def test_image_block_embedded_in_pdf(tmp_path):
+    from PIL import Image
+    img = tmp_path / "pic.png"
+    Image.new("RGB", (40, 20), (10, 20, 30)).save(img)
+    elements = [{"kind": "chapter", "number": 1, "title": "Ch",
+                 "body": "Intro.\n\n![a chart](pic.png)\n\nMore."}]
+    out = tmp_path / "b.pdf"
+    build_pdf({**CONFIG, "asset_bases": [str(tmp_path)]}, elements, out)
+    assert _pdf_images(PdfReader(str(out))), "expected manuscript image in PDF"
+
+
+def test_image_resolves_from_asset_bases_by_basename(tmp_path):
+    from PIL import Image
+    assets = tmp_path / "assets"
+    assets.mkdir()
+    Image.new("RGB", (24, 12), (200, 10, 10)).save(assets / "chart.png")
+    elements = [{"kind": "chapter", "number": 1, "title": "Ch",
+                 "body": "![a chart](chart.png)"}]
+    out = tmp_path / "b.pdf"
+    build_pdf({**CONFIG, "asset_bases": [str(assets)]}, elements, out)
+    assert _pdf_images(PdfReader(str(out)))
+
+
+def test_image_missing_falls_back_to_alt(tmp_path):
+    elements = [{"kind": "chapter", "number": 1, "title": "Ch",
+                 "body": "![a chart](nope.png)"}]
+    out = tmp_path / "b.pdf"
+    build_pdf(CONFIG, elements, out)
+    text = "".join((pg.extract_text() or "") for pg in PdfReader(str(out)).pages)
+    assert "[image: a chart]" in text
+    assert not _pdf_images(PdfReader(str(out)))

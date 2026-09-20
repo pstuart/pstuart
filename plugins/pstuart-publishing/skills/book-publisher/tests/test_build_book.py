@@ -109,3 +109,50 @@ def test_build_book_passes_qa(tmp_path):
     # the new engine's own output should clear the gate (links, outline, fonts,
     # no '--', a11y); report any failures explicitly.
     assert res["qa_pass"], res["qa_fails"]
+
+
+def test_build_book_embeds_pdf_image_from_assets(tmp_path):
+    from PIL import Image
+    from pypdf import PdfReader
+    (tmp_path / "book.toml").write_text(BOOK_TOML)
+    (tmp_path / "assets").mkdir()
+    Image.new("RGB", (32, 16), (200, 10, 10)).save(tmp_path / "assets" / "chart.png")
+    (tmp_path / "manuscript.md").write_text(
+        "# CHAPTER 1\n## Saving\n\nIntro.\n\n![a chart](chart.png)\n\nSavings build a buffer.\n"
+    )
+    res = build_book(tmp_path / "book.toml", tmp_path / "out", formats="pdf")
+    images = [im for pg in PdfReader(res["interior"]).pages for im in pg.images]
+    assert images, "expected assets/ image to resolve into the interior PDF"
+
+
+def _book_with_cover_image(tmp_path, cover_image: str):
+    toml = BOOK_TOML.replace("[isbn]", f'cover_image = "{cover_image}"\n\n[isbn]')
+    (tmp_path / "book.toml").write_text(toml)
+    (tmp_path / "manuscript.md").write_text(MANUSCRIPT)
+    return tmp_path / "book.toml"
+
+
+def _epub_names(path):
+    import zipfile
+    with zipfile.ZipFile(path) as z:
+        return z.namelist()
+
+
+def test_relative_cover_image_resolved_from_book_root(tmp_path):
+    from PIL import Image
+    Image.new("RGB", (8, 8), (1, 2, 3)).save(tmp_path / "cover.jpg")
+    res = build_book(_book_with_cover_image(tmp_path, "cover.jpg"),
+                     tmp_path / "out", formats="epub")
+    names = _epub_names(res["epub"])
+    assert any("cover" in n.lower() for n in names), names
+
+
+def test_missing_cover_image_falls_back_to_kindle_jpg(tmp_path):
+    from PIL import Image
+    _book_with_cover_image(tmp_path, "missing-cover.jpg")
+    out = tmp_path / "out"
+    out.mkdir()
+    Image.new("RGB", (8, 8), (9, 9, 9)).save(out / "sample_book_kindle.jpg")
+    res = build_book(tmp_path / "book.toml", out, formats="epub")
+    names = _epub_names(res["epub"])
+    assert any("cover" in n.lower() for n in names), names

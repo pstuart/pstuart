@@ -51,6 +51,17 @@ def _assemble_manuscript(cfg: dict, base: Path) -> str:
                      "`file_order` (list of chapter files)")
 
 
+def _asset_bases(cfg: dict, base: Path) -> list[Path]:
+    """Directories manuscript images and covers resolve against."""
+    return [
+        base,
+        base / cfg.get("manuscript_dir", "manuscript"),
+        base / "assets",
+        base / "publishing",
+        base / "cover-assets",
+    ]
+
+
 def _normalize_formats(formats: str | Iterable[str] | None) -> set[str]:
     if formats is None:
         return set(_VALID_FORMATS)
@@ -90,10 +101,13 @@ def build_book(book_toml: str | Path, out_dir: str | Path,
     epub_stats = None
     manifest = {}
 
+    asset_bases = _asset_bases(cfg, base)
+
     if "pdf" in selected_formats:
         # Sizing pass learns page count so the binding margin (gutter) meets KDP
         # minimums for the book's thickness.
         pdf_cfg = for_pdf(cfg)
+        pdf_cfg["asset_bases"] = [str(path) for path in asset_bases]
         sizing = build_pdf(pdf_cfg, elements, out / "_sizing.pdf")
         gutter = gutter_inches_for_pages(sizing["pages"])
         margins = dict(pdf_cfg.get("margins") or {})
@@ -108,12 +122,17 @@ def build_book(book_toml: str | Path, out_dir: str | Path,
         )
 
     if "epub" in selected_formats:
-        # Image references resolve relative to the book root and its manuscript dir.
-        asset_bases = [base, base / cfg.get("manuscript_dir", "manuscript"), base / "publishing"]
+        # Image references resolve relative to the book root, manuscript, and assets.
         epub_cfg = for_epub(cfg)
         # Embed the front cover if one has been composed. The Kindle JPG is the same
         # front art used for the paperback wrap; it's composed (page-count-independent)
         # alongside the wrap, so on any rebuild after the first it is already present.
+        cover_image = epub_cfg.get("cover_image")
+        if cover_image:
+            cover_path = Path(cover_image)
+            if not cover_path.is_file():
+                cover_path = base / cover_path
+            epub_cfg["cover_image"] = str(cover_path) if cover_path.is_file() else ""
         if not epub_cfg.get("cover_image"):
             kindle_jpg = out / f"{slug}_kindle.jpg"
             if kindle_jpg.exists():

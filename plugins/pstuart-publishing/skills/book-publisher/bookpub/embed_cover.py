@@ -14,7 +14,7 @@ from __future__ import annotations
 import sys
 from pathlib import Path
 
-from bookpub.build_book import _assemble_manuscript, _slug
+from bookpub.build_book import _assemble_manuscript, _asset_bases, _slug
 from bookpub.config import for_epub, load_book_config
 from bookpub.epub_engine import build_epub
 from bookpub.pdf_engine import parse_manuscript
@@ -35,7 +35,7 @@ def embed_cover(book_toml: str | Path, out_dir: str | Path,
     epub_cfg = for_epub(cfg)
     epub_cfg["cover_image"] = str(cover)
     epub_path = out / f"{slug}.epub"
-    asset_bases = [base, base / cfg.get("manuscript_dir", "manuscript"), base / "publishing"]
+    asset_bases = _asset_bases(cfg, base)
     build_epub(epub_cfg, elements, epub_path, index_terms=cfg.get("index_terms"),
                asset_bases=asset_bases)
     return {"epub": str(epub_path), "cover": str(cover), "slug": slug}

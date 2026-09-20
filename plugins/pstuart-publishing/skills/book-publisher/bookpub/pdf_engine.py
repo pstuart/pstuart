@@ -19,6 +19,7 @@ from pathlib import Path
 
 from fpdf import FPDF
 from fpdf.enums import MethodReturnValue
+from PIL import Image
 
 from bookpub.fonts import register_mono, register_serif
 from bookpub.index import compress_ranges, find_term_pages
@@ -249,8 +250,6 @@ class BookPDF(FPDF):
         if path is None:
             self._paragraph(f"[image: {alt or src}]")
             return
-        from PIL import Image
-
         with Image.open(path) as im:
             width_px, height_px = im.size
         if width_px <= 0 or height_px <= 0:
@@ -265,7 +264,8 @@ class BookPDF(FPDF):
         if self.get_y() + disp_h > self.h - self.b_margin:
             self.add_page()
         x = self.l_margin + (self.epw - disp_w) / 2
-        self.image(str(path), x=x, y=self.get_y(), w=disp_w, h=disp_h)
+        self.image(str(path), x=x, y=self.get_y(), w=disp_w, h=disp_h,
+                   alt_text=alt or src)
         self.set_y(self.get_y() + disp_h + 0.12)
 
     def _heading(self, text: str, level, size: int):

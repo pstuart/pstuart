@@ -51,6 +51,17 @@ def _assemble_manuscript(cfg: dict, base: Path) -> str:
                      "`file_order` (list of chapter files)")
 
 
+def _asset_bases(cfg: dict, base: Path) -> list[Path]:
+    """Directories manuscript images and covers resolve against."""
+    return [
+        base,
+        base / cfg.get("manuscript_dir", "manuscript"),
+        base / "assets",
+        base / "publishing",
+        base / "cover-assets",
+    ]
+
+
 def _normalize_formats(formats: str | Iterable[str] | None) -> set[str]:
     if formats is None:
         return set(_VALID_FORMATS)
@@ -90,13 +101,7 @@ def build_book(book_toml: str | Path, out_dir: str | Path,
     epub_stats = None
     manifest = {}
 
-    asset_bases = [
-        base,
-        base / cfg.get("manuscript_dir", "manuscript"),
-        base / "assets",
-        base / "publishing",
-        base / "cover-assets",
-    ]
+    asset_bases = _asset_bases(cfg, base)
 
     if "pdf" in selected_formats:
         # Sizing pass learns page count so the binding margin (gutter) meets KDP

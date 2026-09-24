@@ -17,6 +17,7 @@ dependencies = [
     "EbookLib>=0.18",
     "Pillow>=10",
     "python-barcode>=0.15",
+    "pdf2image>=1.17",
 ]
 
 [project.optional-dependencies]

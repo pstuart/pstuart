@@ -10,7 +10,7 @@ test:
 
 # Fail-loud gate over built artifacts. Pass PDF=, EPUB=, and/or COVER=/INTERIOR=.
 qa:
-	python3 -m bookpub.qa_report \
+	uv run --frozen --extra test python -m bookpub.qa_report \
 		$(if $(PDF),--pdf $(PDF)) \
 		$(if $(EPUB),--epub $(EPUB)) \
 		$(if $(COVER),--cover $(COVER) --interior $(INTERIOR) --paper $(or $(PAPER),white)) \

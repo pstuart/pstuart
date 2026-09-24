@@ -3,14 +3,14 @@
 .PHONY: install test qa clean
 
 install:
-	pip install -e ".[test]"
+	uv sync --frozen --extra test
 
 test:
-	python3 -m pytest -q
+	uv run --frozen --extra test pytest -q
 
 # Fail-loud gate over built artifacts. Pass PDF=, EPUB=, and/or COVER=/INTERIOR=.
 qa:
-	python3 -m bookpub.qa_report \
+	uv run --frozen --extra test python -m bookpub.qa_report \
 		$(if $(PDF),--pdf $(PDF)) \
 		$(if $(EPUB),--epub $(EPUB)) \
 		$(if $(COVER),--cover $(COVER) --interior $(INTERIOR) --paper $(or $(PAPER),white)) \

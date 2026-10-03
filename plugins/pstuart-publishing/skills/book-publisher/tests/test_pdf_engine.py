@@ -203,3 +203,49 @@ def test_image_missing_falls_back_to_alt(tmp_path):
     text = "".join((pg.extract_text() or "") for pg in PdfReader(str(out)).pages)
     assert "[image: a chart]" in text
     assert not _pdf_images(PdfReader(str(out)))
+
+
+def test_image_unreadable_falls_back_to_alt(tmp_path):
+    (tmp_path / "chart.png").write_bytes(b"not an image")
+    elements = [{"kind": "chapter", "number": 1, "title": "Ch",
+                 "body": "![a chart](chart.png)"}]
+    out = tmp_path / "b.pdf"
+    build_pdf({**CONFIG, "asset_bases": [str(tmp_path)]}, elements, out)
+    text = "".join((pg.extract_text() or "") for pg in PdfReader(str(out)).pages)
+    assert "[image: a chart]" in text
+    assert not _pdf_images(PdfReader(str(out)))
+
+
+def test_image_relative_prefix_stays_inside_base(tmp_path):
+    from PIL import Image
+    Image.new("RGB", (10, 10), (3, 3, 3)).save(tmp_path / "pic.png")
+    (tmp_path / "sub").mkdir()
+    elements = [{"kind": "chapter", "number": 1, "title": "Ch",
+                 "body": "![a chart](./pic.png)\n\n![again](sub/../pic.png)"}]
+    out = tmp_path / "b.pdf"
+    build_pdf({**CONFIG, "asset_bases": [str(tmp_path)]}, elements, out)
+    assert len(_pdf_images(PdfReader(str(out)))) == 2
+
+
+def test_image_outside_book_is_not_read(tmp_path, monkeypatch):
+    from PIL import Image
+    outside = tmp_path / "outside"
+    outside.mkdir()
+    Image.new("RGB", (8, 8), (1, 2, 3)).save(outside / "secret.png")
+    book = tmp_path / "book"
+    book.mkdir()
+    monkeypatch.chdir(outside)
+    elements = [{"kind": "chapter", "number": 1, "title": "Ch",
+                 "body": (
+                     f"![secret]({outside / 'secret.png'})\n\n"
+                     "![up](../outside/secret.png)\n\n"
+                     "![cwd](secret.png)"
+                 )}]
+    out = tmp_path / "b.pdf"
+    build_pdf({**CONFIG, "asset_bases": [str(book)]}, elements, out)
+    reader = PdfReader(str(out))
+    assert not _pdf_images(reader)
+    text = "".join((pg.extract_text() or "") for pg in reader.pages)
+    assert "[image: secret]" in text
+    assert "[image: up]" in text
+    assert "[image: cwd]" in text

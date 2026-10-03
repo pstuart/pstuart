@@ -5,3 +5,4 @@ templates/fixtures/sample_book/assets/*
 __pycache__/
 *.pyc
 .pytest_cache/
+*.egg-info/

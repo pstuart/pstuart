@@ -27,7 +27,7 @@ from bookpub.config import (
 )
 from bookpub.discovery import kdp_paperback_manifest
 from bookpub.epub_engine import build_epub
-from bookpub.pdf_engine import build_pdf, parse_manuscript
+from bookpub.pdf_engine import build_pdf, contained_file, parse_manuscript
 from bookpub.qa_report import FAIL, check_epub, check_pdf
 
 _VALID_FORMATS = {"pdf", "epub"}
@@ -127,12 +127,14 @@ def build_book(book_toml: str | Path, out_dir: str | Path,
         # Embed the front cover if one has been composed. The Kindle JPG is the same
         # front art used for the paperback wrap; it's composed (page-count-independent)
         # alongside the wrap, so on any rebuild after the first it is already present.
+        # book.toml cover paths stay inside the book directory. An absolute
+        # path or a '..' escape is dropped so the Kindle JPG fallback can run.
         cover_image = epub_cfg.get("cover_image")
         if cover_image:
-            cover_path = Path(cover_image)
-            if not cover_path.is_file():
-                cover_path = base / cover_path
-            epub_cfg["cover_image"] = str(cover_path) if cover_path.is_file() else ""
+            raw = Path(cover_image)
+            candidate = raw if raw.is_absolute() else base / cover_image
+            found = None if "\x00" in cover_image else contained_file(base, candidate)
+            epub_cfg["cover_image"] = str(found) if found else ""
         if not epub_cfg.get("cover_image"):
             kindle_jpg = out / f"{slug}_kindle.jpg"
             if kindle_jpg.exists():

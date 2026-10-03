@@ -32,6 +32,7 @@ from bookpub.pdf_engine import (
     _parse_table,
     _split_blocks,
     parse_manuscript,
+    resolve_asset_path,
 )
 from bookpub.qa_report import is_placeholder_isbn
 from bookpub.text import render_checkboxes, sanitize_text, strip_unsupported
@@ -190,28 +191,29 @@ def _add_accessibility_metadata(book: epub.EpubBook) -> None:
 
 def _make_image_registrar(book: epub.EpubBook, asset_bases: list[Path]):
     """Return register_image(src) that bundles an image found under any asset base
-    into the EPUB and returns its in-package href (None if not found)."""
+    into the EPUB and returns its in-package href (None if not found).
+
+    Sources that resolve outside those bases are ignored.
+    """
     seen: dict[str, str] = {}
 
     def register(src: str) -> str | None:
-        rel = src.lstrip("./")
-        for base in asset_bases:
-            for cand in (Path(base) / src, Path(base) / rel, Path(base) / Path(src).name):
-                try:
-                    cand = cand.resolve()
-                except OSError:
-                    continue
-                if cand.is_file():
-                    key = str(cand)
-                    if key in seen:
-                        return seen[key]
-                    name = f"images/{cand.name}"
-                    media = "image/png" if cand.suffix.lower() == ".png" else "image/jpeg"
-                    book.add_item(epub.EpubImage(uid=f"img_{len(seen)}", file_name=name,
-                                                 media_type=media, content=cand.read_bytes()))
-                    seen[key] = name
-                    return name
-        return None
+        cand = resolve_asset_path(src, asset_bases)
+        if cand is None:
+            return None
+        key = str(cand)
+        if key in seen:
+            return seen[key]
+        name = f"images/{cand.name}"
+        media = "image/png" if cand.suffix.lower() == ".png" else "image/jpeg"
+        try:
+            content = cand.read_bytes()
+        except OSError:
+            return None
+        book.add_item(epub.EpubImage(uid=f"img_{len(seen)}", file_name=name,
+                                     media_type=media, content=content))
+        seen[key] = name
+        return name
 
     return register
 

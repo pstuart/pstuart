@@ -156,3 +156,27 @@ def test_missing_cover_image_falls_back_to_kindle_jpg(tmp_path):
     res = build_book(tmp_path / "book.toml", out, formats="epub")
     names = _epub_names(res["epub"])
     assert any("cover" in n.lower() for n in names), names
+
+
+def test_cover_outside_book_is_not_embedded(tmp_path):
+    from PIL import Image
+    outside = tmp_path / "outside"
+    outside.mkdir()
+    Image.new("RGB", (8, 8), (7, 8, 9)).save(outside / "cover.jpg")
+    book = tmp_path / "book"
+    book.mkdir()
+    res = build_book(_book_with_cover_image(book, str(outside / "cover.jpg")),
+                     book / "out", formats="epub")
+    names = _epub_names(res["epub"])
+    assert not any("cover" in n.lower() for n in names), names
+
+
+def test_cover_traversal_is_not_embedded(tmp_path):
+    from PIL import Image
+    Image.new("RGB", (8, 8), (7, 8, 9)).save(tmp_path / "cover.jpg")
+    book = tmp_path / "book"
+    book.mkdir()
+    res = build_book(_book_with_cover_image(book, "../cover.jpg"),
+                     book / "out", formats="epub")
+    names = _epub_names(res["epub"])
+    assert not any("cover" in n.lower() for n in names), names

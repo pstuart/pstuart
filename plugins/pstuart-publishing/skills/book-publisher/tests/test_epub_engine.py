@@ -130,6 +130,28 @@ def test_image_missing_falls_back_to_alt(tmp_path):
         assert not any("images/" in n for n in z.namelist())
 
 
+def test_image_outside_asset_base_not_bundled(tmp_path, monkeypatch):
+    from PIL import Image
+    outside = tmp_path / "outside"
+    outside.mkdir()
+    Image.new("RGB", (4, 4), (1, 2, 3)).save(outside / "secret.png")
+    book = tmp_path / "book"
+    book.mkdir()
+    monkeypatch.chdir(outside)
+    elements = [{"kind": "chapter", "number": 1, "title": "Ch",
+                 "body": (
+                     f"![secret]({outside / 'secret.png'})\n\n"
+                     "![up](../outside/secret.png)\n\n"
+                     "![cwd](secret.png)"
+                 )}]
+    out = tmp_path / "b.epub"
+    build_epub({"title": "T", "author": "A", "year": "2026"}, elements, out,
+               asset_bases=[book])
+    import zipfile
+    with zipfile.ZipFile(out) as z:
+        assert not any(n.startswith("images/") or "/images/" in n for n in z.namelist())
+
+
 @pytest.mark.skipif(shutil.which("epubcheck") is None, reason="epubcheck not installed")
 def test_passes_epubcheck(tmp_path):
     out, _ = _build(tmp_path)

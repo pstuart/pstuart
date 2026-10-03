@@ -17,7 +17,7 @@ from __future__ import annotations
 import re
 from pathlib import Path
 
-from fpdf import FPDF
+from fpdf import FPDF, FPDFException
 from fpdf.enums import MethodReturnValue
 from PIL import Image
 
@@ -51,6 +51,53 @@ STYLE_PRESETS = {
 
 _ROMAN = ["", "I", "II", "III", "IV", "V", "VI", "VII", "VIII", "IX", "X",
           "XI", "XII", "XIII", "XIV", "XV", "XVI", "XVII", "XVIII", "XIX", "XX"]
+
+
+def contained_file(root: Path, candidate: Path) -> Path | None:
+    """Existing file at candidate only when it resolves inside root.
+
+    Symlinks are followed, so a link that points outside root is rejected.
+    """
+    try:
+        resolved_root = Path(root).resolve()
+        resolved = Path(candidate).resolve()
+        if not resolved.is_file():
+            return None
+        resolved.relative_to(resolved_root)
+    except (OSError, RuntimeError, ValueError):
+        return None
+    return resolved
+
+
+def resolve_asset_path(src: str, bases) -> Path | None:
+    """Resolve a manuscript image under asset bases, or None.
+
+    Absolute paths, cwd-relative paths, and any path that resolves outside
+    those bases are rejected. Basename fallback is skipped when src has '..'
+    so a traversal attempt cannot land on a same-named file.
+    """
+    if not isinstance(src, str) or not src or "\x00" in src:
+        return None
+    raw = Path(src)
+    if raw.is_absolute():
+        return None
+    rel = src.removeprefix("./")
+    escaped = ".." in raw.parts
+    for base in bases or []:
+        try:
+            root = Path(base).resolve()
+        except (OSError, RuntimeError):
+            continue
+        candidates = [Path(base) / rel]
+        if rel != src:
+            candidates.append(Path(base) / src)
+        if not escaped and raw.name not in ("", ".", ".."):
+            candidates.append(Path(base) / raw.name)
+        for cand in candidates:
+            found = contained_file(root, cand)
+            if found is not None:
+                return found
+    return None
 
 
 class BookPDF(FPDF):
@@ -222,36 +269,25 @@ class BookPDF(FPDF):
                 self._paragraph(" ".join(block))
 
     def _resolve_image(self, src: str) -> Path | None:
-        raw = Path(src)
-        candidates: list[Path] = []
-        if raw.is_file():
-            return raw
-        candidates.append(raw)
-        for base in self.config.get("asset_bases") or []:
-            base_path = Path(base)
-            candidates.extend(
-                (
-                    base_path / src,
-                    base_path / src.lstrip("./"),
-                    base_path / raw.name,
-                )
-            )
-        for cand in candidates:
-            try:
-                if cand.is_file():
-                    return cand
-            except OSError:
-                continue
-        return None
+        return resolve_asset_path(src, self.config.get("asset_bases"))
 
     def _image(self, src: str, alt: str):
-        """Place a manuscript image, scaled to the text column."""
+        """Place a manuscript image, scaled to the text column.
+
+        A missing or unreadable image becomes alt text. It must not abort
+        the rest of the export.
+        """
+        label = f"[image: {alt or src}]"
         path = self._resolve_image(src)
         if path is None:
-            self._paragraph(f"[image: {alt or src}]")
+            self._paragraph(label)
             return
-        with Image.open(path) as im:
-            width_px, height_px = im.size
+        try:
+            with Image.open(path) as im:
+                width_px, height_px = im.size
+        except (OSError, ValueError, Image.DecompressionBombError):
+            self._paragraph(label)
+            return
         if width_px <= 0 or height_px <= 0:
             return
         max_w = float(self.epw)
@@ -264,8 +300,12 @@ class BookPDF(FPDF):
         if self.get_y() + disp_h > self.h - self.b_margin:
             self.add_page()
         x = self.l_margin + (self.epw - disp_w) / 2
-        self.image(str(path), x=x, y=self.get_y(), w=disp_w, h=disp_h,
-                   alt_text=alt or src)
+        try:
+            self.image(str(path), x=x, y=self.get_y(), w=disp_w, h=disp_h,
+                       alt_text=alt or src)
+        except (OSError, FPDFException, Image.DecompressionBombError):
+            self._paragraph(label)
+            return
         self.set_y(self.get_y() + disp_h + 0.12)
 
     def _heading(self, text: str, level, size: int):

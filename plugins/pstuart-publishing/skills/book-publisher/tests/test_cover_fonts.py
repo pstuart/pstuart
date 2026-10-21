@@ -42,7 +42,7 @@ def test_registered_fonts_accept_unicode(tmp_path: Path):
     assert "–" in text, f"en-dash not found in extracted text: {text!r}"
 
 
-def test_italic_and_bold_variants_apply(tmp_path: Path):
+def test_italic_and_bold_variants_apply():
     """After registering, set_font on each variant should succeed with unpacking."""
     pdf = FPDF()
     fonts = register_fonts(pdf)

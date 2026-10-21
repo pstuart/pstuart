@@ -11,7 +11,7 @@ from templates.lib.cover_session import (
 )
 
 
-def test_new_session_has_current_schema(tmp_cover_assets: Path):
+def test_new_session_has_current_schema():
     s = CoverSession.new(book_title="Test", style_preset="navy_gold")
     assert s.schema_version == SCHEMA_VERSION
     assert s.book_title == "Test"
@@ -62,7 +62,7 @@ def test_incompatible_schema_raises(tmp_cover_assets: Path):
         load_session(target)
 
 
-def test_approve_sets_canonical_fields(tmp_cover_assets: Path):
+def test_approve_sets_canonical_fields():
     s = CoverSession.new(book_title="Test", style_preset="navy_gold")
     s.record_iteration(surface="kindle", prompt="p1", seed=111, approved=True)
     assert s.surfaces["kindle"]["approved_seed"] == 111

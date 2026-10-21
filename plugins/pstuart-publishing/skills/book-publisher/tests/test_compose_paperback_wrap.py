@@ -24,7 +24,7 @@ def _import_compose_wrap():
 
 
 def test_compose_paperback_wrap_produces_pdf_with_vector_text(
-    tmp_path: Path, sample_book_config: dict, monkeypatch
+    tmp_path: Path, sample_book_config: dict
 ):
     # Arrange: minimal project layout in tmp_path
     pub_dir = tmp_path / "publishing"

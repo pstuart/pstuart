@@ -86,7 +86,7 @@ def test_body_to_xhtml_emdash_and_escaping():
     assert "&amp;" in html
 
 
-def test_table_to_xhtml(tmp_path):
+def test_table_to_xhtml():
     html = body_to_xhtml("| A | B |\n|---|---|\n| 1 | two hundred |")
     assert "<table>" in html and "<th>A</th>" in html
     assert "<td>two hundred</td>" in html  # not truncated

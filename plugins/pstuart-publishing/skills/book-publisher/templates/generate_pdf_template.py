@@ -237,14 +237,6 @@ STYLE_PRESETS = {
 # Choose your style preset here (or set to None and use custom colors below)
 STYLE_PRESET = "navy_gold"
 
-# Get colors from preset or use custom
-def get_style_colors():
-    """Return the active color scheme based on preset or custom."""
-    if STYLE_PRESET and STYLE_PRESET in STYLE_PRESETS:
-        preset = STYLE_PRESETS[STYLE_PRESET]
-        return preset["cover"], preset["interior"]
-    return COVER_COLORS, DESIGN_COLORS
-
 # Custom color scheme (used if STYLE_PRESET is None)
 COVER_COLORS = {
     "gradient_start": (15, 32, 55),     # Dark navy
@@ -320,14 +312,6 @@ PULL_QUOTES = [
     "Your memorable quote here.",
     "Another key statement to highlight.",
     # Add more key phrases from your book
-]
-
-# Features for back cover bullet list
-BACK_COVER_FEATURES = [
-    "First key benefit readers will get from your book",
-    "Second compelling reason to buy",
-    "Third value proposition",
-    "Fourth takeaway or promise",
 ]
 
 
@@ -639,52 +623,6 @@ Printed in the United States of America
 
         self.set_y(y_start + 0.9)
         self.ln(0.1)
-
-    def key_insight_box(self, title, content):
-        """Render a key insight box with navy header."""
-        d = DESIGN_COLORS
-
-        if self.get_y() > 6.0:
-            self.add_page()
-
-        self.ln(0.1)
-        width = self.w - self.l_margin - self.r_margin
-        x_start = self.l_margin
-        y_start = self.get_y()
-
-        # Calculate heights
-        title_upper = sanitize_text(title.upper())
-        header_height = 0.28
-        estimated_lines = max(2, len(content) // 55 + 1)
-        content_height = (estimated_lines * 0.17) + 0.15
-        box_height = header_height + content_height
-
-        # Navy header bar
-        self.set_fill_color(*d["navy"])
-        self.rect(x_start, y_start, width, header_height, 'F')
-
-        # Gray content background
-        self.set_fill_color(*d["gray_light"])
-        self.rect(x_start, y_start + header_height, width, content_height, 'F')
-
-        # Border
-        self.set_draw_color(*d["gold_border"])
-        self.set_line_width(0.02)
-        self.rect(x_start, y_start, width, box_height, 'D')
-
-        # Title
-        self.set_xy(x_start + 0.1, y_start + 0.06)
-        self.use_font('B', 9)
-        self.set_text_color(255, 255, 255)
-        self.multi_cell(width - 0.2, 0.16, title_upper, align='L')
-
-        # Content
-        self.set_xy(x_start + 0.1, y_start + header_height + 0.07)
-        self.use_font('', 9)
-        self.set_text_color(*d["charcoal"])
-        self.multi_cell(width - 0.2, 0.17, sanitize_text(content))
-
-        self.set_y(y_start + box_height + 0.1)
 
     def draw_decorative_line(self, style='gold'):
         """Draw a decorative divider line with optional diamond."""
@@ -1100,123 +1038,6 @@ Printed in the United States of America
 
         self.ln(0.1)
         self.set_x(self.l_margin)
-
-    # ========================================================================
-    # INFOGRAPHIC METHODS (EXAMPLES - CUSTOMIZE FOR YOUR BOOK)
-    # ========================================================================
-
-    def framework_infographic(self, title, items):
-        """
-        Draw a vertical framework infographic.
-        items: list of (letter, title, description, color) tuples
-        """
-        d = DESIGN_COLORS
-
-        if self.get_y() > 2.5:
-            self.add_page()
-
-        self.ln(0.15)
-        self.use_font('B', 12)
-        self.set_text_color(*d["navy"])
-        self.cell(0, 0.25, title, align='C', new_x='LMARGIN', new_y='NEXT')
-        self.ln(0.15)
-
-        width = self.w - self.l_margin - self.r_margin
-        x_start = self.l_margin
-        y_start = self.get_y()
-        box_height = 0.55
-        spacing = 0.06
-
-        for idx, (letter, item_title, desc, color) in enumerate(items):
-            y = y_start + idx * (box_height + spacing)
-
-            # Background
-            self.set_fill_color(*d["gray_light"])
-            self.rect(x_start + 0.45, y, width - 0.45, box_height, 'F')
-
-            # Colored accent
-            self.set_fill_color(*color)
-            self.rect(x_start + 0.45, y, 0.05, box_height, 'F')
-
-            # Letter circle
-            self.set_fill_color(*color)
-            self.ellipse(x_start, y + 0.08, 0.4, 0.38, 'F')
-            self.use_font('B', 16)
-            self.set_text_color(255, 255, 255)
-            self.set_xy(x_start + 0.12, y + 0.16)
-            self.cell(0.16, 0.2, letter, align='C')
-
-            # Title
-            self.set_xy(x_start + 0.58, y + 0.08)
-            self.use_font('B', 9)
-            self.set_text_color(*d["navy"])
-            self.cell(width - 0.65, 0.16, item_title)
-
-            # Description
-            self.set_xy(x_start + 0.58, y + 0.28)
-            self.use_font('', 8)
-            self.set_text_color(*d["charcoal"])
-            self.cell(width - 0.65, 0.14, desc)
-
-        self.set_y(y_start + len(items) * (box_height + spacing) + 0.1)
-
-    def decision_flowchart(self, title, steps):
-        """
-        Draw a decision flowchart.
-        steps: list of (number, title, description) tuples
-        """
-        d = DESIGN_COLORS
-
-        self.ln(0.15)
-        self.use_font('B', 12)
-        self.set_text_color(*d["navy"])
-        self.cell(0, 0.25, title, align='C', new_x='LMARGIN', new_y='NEXT')
-        self.ln(0.2)
-
-        width = self.w - self.l_margin - self.r_margin
-        x_start = self.l_margin
-        y_start = self.get_y()
-        x_center = self.w / 2
-        step_height = 0.35
-
-        for idx, (num, step_title, desc) in enumerate(steps):
-            y = y_start + idx * (step_height + 0.15)
-
-            # Step box
-            self.set_fill_color(*d["gray_light"])
-            self.rect(x_start + 0.4, y, width - 0.4, step_height, 'F')
-
-            # Gold left edge
-            self.set_fill_color(*d["gold_border"])
-            self.rect(x_start + 0.4, y, 0.04, step_height, 'F')
-
-            # Number circle
-            self.set_fill_color(*d["navy"])
-            self.ellipse(x_start, y + 0.05, 0.28, 0.25, 'F')
-            self.use_font('B', 11)
-            self.set_text_color(255, 255, 255)
-            self.set_xy(x_start + 0.08, y + 0.08)
-            self.cell(0.12, 0.18, str(num), align='C')
-
-            # Title and description
-            self.set_xy(x_start + 0.55, y + 0.05)
-            self.use_font('B', 9)
-            self.set_text_color(*d["navy"])
-            self.cell(0.6, 0.12, step_title)
-
-            self.set_x(x_start + 1.2)
-            self.use_font('', 8)
-            self.set_text_color(*d["charcoal"])
-            self.cell(width - 1.7, 0.12, desc)
-
-            # Arrow to next
-            if idx < len(steps) - 1:
-                arrow_y = y + step_height + 0.04
-                self.set_draw_color(*d["gold_border"])
-                self.set_line_width(0.015)
-                self.line(x_center, arrow_y, x_center, arrow_y + 0.08)
-
-        self.set_y(y_start + len(steps) * (step_height + 0.15) + 0.2)
 
 
 # ============================================================================

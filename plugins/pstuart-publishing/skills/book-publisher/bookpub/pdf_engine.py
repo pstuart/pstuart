@@ -628,10 +628,6 @@ def parse_manuscript(md: str) -> list[dict]:
     return elements
 
 
-def _count_sections(body: str) -> int:
-    return sum(1 for ln in body.splitlines() if ln.startswith("## "))
-
-
 class _TocEntry:
     """Minimal stand-in for fpdf2's OutlineSection (name/level/page_number) used to
     pre-measure the TOC's exact page span."""
@@ -639,22 +635,6 @@ class _TocEntry:
 
     def __init__(self, name, level, page_number):
         self.name, self.level, self.page_number = name, level, page_number
-
-
-def _toc_entries(elements: list[dict], chapter_level: int) -> list[tuple[str, int]]:
-    """The (title, level) rows the TOC will show — parts, chapters, and ## sections.
-    Mirrors exactly what start_section records during the body render."""
-    rows: list[tuple[str, int]] = []
-    for el in elements:
-        if el["kind"] == "part":
-            rows.append((el["title"], 0))
-        else:
-            rows.append((el.get("title") or f"Chapter {el.get('number', '')}".strip(),
-                         chapter_level))
-            for ln in el.get("body", "").splitlines():
-                if ln.startswith("## "):
-                    rows.append((ln[3:].strip(), chapter_level + 1))
-    return rows
 
 
 def _count_toc_pages(config: dict, entries: list[tuple[str, int]]) -> int:

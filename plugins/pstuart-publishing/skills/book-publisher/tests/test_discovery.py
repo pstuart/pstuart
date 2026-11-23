@@ -1,4 +1,6 @@
 """Tests for bookpub.discovery — page-count detection + cover consistency guard."""
+import os
+
 import pytest
 from fpdf import FPDF
 
@@ -27,12 +29,15 @@ def test_detect_page_count(tmp_path):
 
 
 def test_find_latest_pdf(tmp_path):
-    (tmp_path / "a.pdf").write_bytes(b"%PDF-1.4")
-    import os, time
-    time.sleep(0.01)
-    (tmp_path / "b.pdf").write_bytes(b"%PDF-1.4")
-    latest = find_latest_pdf(tmp_path)
-    assert latest.name == "b.pdf"
+    newer = tmp_path / "a.pdf"
+    older = tmp_path / "b.pdf"
+    newer.write_bytes(b"%PDF-1.4")
+    older.write_bytes(b"%PDF-1.4")
+    os.utime(older, (1_000_000, 1_000_000))
+    os.utime(newer, (2_000_000, 2_000_000))
+    assert find_latest_pdf(tmp_path) == newer
+    os.utime(older, (3_000_000, 3_000_000))
+    assert find_latest_pdf(tmp_path) == older
 
 
 def _fake_wrap(tmp_path, width_in):

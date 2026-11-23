@@ -67,9 +67,14 @@ def test_per_format_isbn(tmp_path):
     assert for_epub(cfg)["isbn"] == "978-1-2345-6788-0"
 
 
-def test_build_book_produces_both_artifacts(tmp_path):
-    out = tmp_path / "out"
-    res = build_book(_book(tmp_path), out)
+@pytest.fixture(scope="module")
+def sample_build(tmp_path_factory):
+    root = tmp_path_factory.mktemp("sample-book")
+    return build_book(_book(root), root / "out")
+
+
+def test_build_book_produces_both_artifacts(sample_build):
+    res = sample_build
     assert Path(res["interior"]).exists()
     assert Path(res["epub"]).exists()
     assert res["formats"] == ["epub", "pdf"]
@@ -104,8 +109,8 @@ def test_build_book_can_generate_epub_only(tmp_path):
     assert res["qa_pass"], res["qa_fails"]
 
 
-def test_build_book_passes_qa(tmp_path):
-    res = build_book(_book(tmp_path), tmp_path / "out")
+def test_build_book_passes_qa(sample_build):
+    res = sample_build
     # the new engine's own output should clear the gate (links, outline, fonts,
     # no '--', a11y); report any failures explicitly.
     assert res["qa_pass"], res["qa_fails"]
